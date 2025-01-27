@@ -175,10 +175,12 @@ class EgoVehicleProcess:
 
     def do(self):
         if self.settings.selected_input != 'None' and hasattr(self, 'spawned_vehicle'):
+
             self._control.steer = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].steering_angle / math.radians(450)
             self._control.reverse = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].reverse
             self._control.hand_brake = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].handbrake
             self._control.brake = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].brake
+            self.display_hud_message("LALALALALALAL")
             if self.settings.set_velocity:
                 vel_error = self.settings.velocity - (math.sqrt(
                     self.spawned_vehicle.get_velocity().x ** 2 + self.spawned_vehicle.get_velocity().y ** 2 + self.spawned_vehicle.get_velocity().z ** 2) * 3.6)
@@ -207,6 +209,23 @@ class EgoVehicleProcess:
                 pass
 
         self.set_shared_variables()
+
+    def display_hud_message(self, message, duration=4.0):
+        if hasattr(self, 'spawned_vehicle'):
+            vehicle_transform = self.spawned_vehicle.get_transform()
+            hud_location = vehicle_transform.location  # Adjust as needed
+            carlaLoc = carla.Location(x=-0.45,y=0,z=0.7)
+            newloc = hud_location + carlaLoc
+            print(hud_location,"HUD LOCATION")
+            print(carlaLoc,"CARLA LOCATION")
+            print(newloc)
+            self.carlainterface_mp.world.debug.draw_string(
+                newloc,
+                message,
+                draw_shadow=True,
+                color=carla.Color(r=0, g=0, b=0),
+                life_time=duration
+            )
 
     def destroy(self):
         if hasattr(self, 'spawned_vehicle'):
