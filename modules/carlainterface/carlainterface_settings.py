@@ -68,6 +68,10 @@ class CarlaInterfaceSettings(ModuleSettings):
                 npc_vehicle_settings = AgentTypes.NPC_VEHICLE.settings()
                 npc_vehicle_settings.set_from_loaded_dict(settings_dict)
                 self.agents.update({identifier: npc_vehicle_settings})
+            elif str(AgentTypes.MY_VEHICLE) in identifier:
+                my_vehicle_settings = AgentTypes.MY_VEHICLE.settings()
+                my_vehicle_settings.set_from_loaded_dict(settings_dict)
+                self.agents.update({identifier: my_vehicle_settings})
 
     def add_agent(self, agent_type: AgentTypes, agent_settings=None):
         """
@@ -91,7 +95,7 @@ class CarlaInterfaceSettings(ModuleSettings):
         # add settings to dict, check if settings do not already exist
         if agent_settings not in self.agents.values():
             self.agents[agent_settings.identifier] = agent_settings
-
+        print(agent_settings)
         return agent_settings
 
     def all_agents(self):
