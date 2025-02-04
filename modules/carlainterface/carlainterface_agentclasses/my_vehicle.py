@@ -28,6 +28,7 @@ class MyVehicleSettingsDialog(QtWidgets.QDialog):
         self.btn_update.clicked.connect(lambda: self.update_settings(self.settings))
         self.display_values()
 
+
         self.update_settings(self.settings)
 
     def show(self):
@@ -211,7 +212,7 @@ class MyVehicleProcess:
 
         self.set_shared_variables()
 
-    def display_hud_message(self, message, duration=4.0):
+    def display_hud_message(self, message, duration=0.3):
         if hasattr(self, 'spawned_vehicle'):
             vehicle_transform = self.spawned_vehicle.get_transform()
             hud_location = vehicle_transform.location  # Adjust as needed
@@ -229,8 +230,9 @@ class MyVehicleProcess:
             )
 
     def destroy(self):
-        if hasattr(self, 'spawned_vehicle'):
+        if hasattr(self, 'spawned_vehicle') and self.spawned_vehicle is not None:
             self.spawned_vehicle.destroy()
+            self.spawned_vehicle = None  # Mark the vehicle as destroyed
 
     def velocity_PD_controller(self, vel_error):
         _kp_vel = 50
@@ -245,6 +247,9 @@ class MyVehicleProcess:
         return output
 
     def calculate_plotter_road_arrays(self):
+        # If the vehicle is destroyed, skip calculating the road arrays.
+        if not hasattr(self, 'spawned_vehicle') or self.spawned_vehicle is None:
+            return
         data_road_x = []
         data_road_x_inner = []
         data_road_x_outer = []

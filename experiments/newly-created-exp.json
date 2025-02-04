@@ -1,0 +1,81 @@
+{
+    "modules_included": [
+        "Hardware Manager",
+        "Carla Interface",
+        "Data Plotter",
+        "NPC Controller Manager",
+        "Data Recorder"
+    ],
+    "base_settings": {
+        "Hardware Manager": {
+            "inputs": {
+                "Keyboard_1": {
+                    "steer_left_key": 65,
+                    "steer_right_key": 68,
+                    "throttle_key": 87,
+                    "brake_key": 83,
+                    "reverse_key": 82,
+                    "handbrake_key": 32,
+                    "identifier": "Keyboard_1",
+                    "input_type": 0,
+                    "min_steer": -1.5708,
+                    "max_steer": 1.5708,
+                    "auto_center": true,
+                    "steer_sensitivity": 50,
+                    "throttle_sensitivity": 50,
+                    "brake_sensitivity": 50
+                }
+            }
+        },
+        "Carla Interface": {
+            "agents": {
+                "Ego Vehicle_1": {
+                    "selected_input": "Keyboard_1",
+                    "selected_controller": "None",
+                    "selected_spawnpoint": "Spawnpoint 0",
+                    "selected_car": "hapticslab.audi",
+                    "velocity": 80,
+                    "set_velocity": false,
+                    "identifier": "Ego Vehicle_1",
+                    "agent_type": 0
+                }
+            },
+            "host": "localhost",
+            "port": 2000,
+            "current_scenario": null
+        },
+        "Data Plotter": {
+            "variables_to_be_plotted": []
+        },
+        "NPC Controller Manager": {
+            "controllers": {}
+        },
+        "Data Recorder": {
+            "path_to_save_file": "C:\\Users\\localadmin\\Desktop\\joan_data.csv",
+            "append_timestamp_to_filename": true,
+            "variables_to_be_saved": [],
+            "path_to_trajectory_save_file": "",
+            "should_record_trajectory": false
+        }
+    },
+    "conditions": {
+        "have-to-stop": {
+            "Hardware Manager": {
+                "inputs": {
+                    "Keyboard_1": {}
+                }
+            },
+            "Carla Interface": {
+                "agents": {
+                    "Ego Vehicle_1": {}
+                }
+            },
+            "Data Plotter": {},
+            "NPC Controller Manager": {
+                "controllers": {}
+            },
+            "Data Recorder": {}
+        }
+    },
+    "active_condition_sequence": []
+}
