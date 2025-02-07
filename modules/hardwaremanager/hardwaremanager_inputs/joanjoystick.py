@@ -152,7 +152,23 @@ class JoyStickSettings:
             settings_to_return.hand_brake_value = 40
             settings_to_return.reverse_channel = 6
             settings_to_return.reverse_value = 10
-
+        elif device == 'steeringwheel':
+            settings_to_return.min_steer = -1 * math.pi
+            settings_to_return.max_steer = 1 * math.pi
+            settings_to_return.degrees_of_freedom = 9
+            settings_to_return.gas_channel = 6
+            settings_to_return.use_separate_brake_channel = True
+            settings_to_return.brake_channel = 7
+            settings_to_return.first_steer_channel = 5
+            settings_to_return.use_double_steering_resolution = False
+            settings_to_return.second_steer_channel = -1
+            settings_to_return.hand_brake_channel = 0
+            settings_to_return.hand_brake_value = 24
+            settings_to_return.reverse_channel = 0
+            settings_to_return.reverse_value = 72
+            settings_to_return.gear_channel = 1  # 2
+            settings_to_return.gear_up = 1  # 8
+            settings_to_return.gear_down = 2  # 64
         return settings_to_return
 
 
@@ -193,6 +209,8 @@ class JoystickSettingsDialog(QtWidgets.QDialog):
         self.presetsComboBox.addItem("Custom")
         self.presetsComboBox.addItem("XBOX")
         self.presetsComboBox.addItem("PlayStation")
+        self.presetsComboBox.addItem("SteeringWheel")
+
 
         self.dofSpinBox.valueChanged.connect(self._set_preset_combo_box_to_custom)
         self.gasChannelSpinBox.valueChanged.connect(self._set_preset_combo_box_to_custom)

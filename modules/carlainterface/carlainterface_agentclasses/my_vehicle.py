@@ -157,6 +157,12 @@ class MyVehicleProcess:
         torque_curve.append(carla.Vector2D(x=0, y=600))
         torque_curve.append(carla.Vector2D(x=14000, y=600))
         gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
+        gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
+        gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
+        gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
+        gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
+        gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
+        gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
 
         if self.settings.selected_spawnpoint != 'None':
             if self.settings.selected_car != 'None':
@@ -221,13 +227,13 @@ class MyVehicleProcess:
             print(hud_location,"HUD LOCATION")
             print(carlaLoc,"CARLA LOCATION")
             print(newloc)
-            self.carlainterface_mp.world.debug.draw_string(
-                newloc,
-                message,
-                draw_shadow=True,
-                color=carla.Color(r=0, g=0, b=0),
-                life_time=duration
-            )
+            # self.carlainterface_mp.world.debug.draw_string(
+            #     newloc,
+            #     message,
+            #     draw_shadow=True,
+            #     color=carla.Color(r=0, g=0, b=0),
+            #     life_time=duration
+            # )
 
     def destroy(self):
         if hasattr(self, 'spawned_vehicle') and self.spawned_vehicle is not None:
