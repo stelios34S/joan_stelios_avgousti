@@ -53,6 +53,12 @@ class JOANKeyboardProcess:
             self._handbrake = boolean_key_press_value
         elif int_key_identifier == self.settings.reverse_key and boolean_key_press_value:
             self._reverse = not self._reverse
+        ###########################################################
+        elif int_key_identifier == self.settings.inform_key:
+            self.shared_variables.inform = boolean_key_press_value
+        elif int_key_identifier == self.settings.intervene_key:
+            self.shared_variables.intervene = boolean_key_press_value
+        ############################################################
 
     def do(self):
         """
@@ -128,6 +134,11 @@ class KeyBoardSettings:
         self.brake_key = QtGui.QKeySequence('s')[0]
         self.reverse_key = QtGui.QKeySequence('r')[0]
         self.handbrake_key = QtGui.QKeySequence('space')[0]
+        ##################################################
+        ##TODO: ADD NEW BUTTONS FOR INTERVENE AND INFORM
+        self.inform_key=QtGui.QKeySequence('i')[0]
+        self.intervene_key = QtGui.QKeySequence("j")[0]
+        ##################################################
         self.identifier = identifier
         self.input_type = HardwareInputTypes.KEYBOARD.value
 

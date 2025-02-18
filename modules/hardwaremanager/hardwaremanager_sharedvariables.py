@@ -27,6 +27,8 @@ class KeyboardSharedVariables(SharedVariables):
         self._brake = mp.Value(c_float, -9.9)
         self._reverse = mp.Value(c_bool, False)
         self._handbrake = mp.Value(c_bool, False)
+        self._inform = mp.Value(c_bool, False)
+        self._intervene = mp.Value(c_bool, False)
 
     @property
     def steering_angle(self):
@@ -68,6 +70,23 @@ class KeyboardSharedVariables(SharedVariables):
     def handbrake(self, val):
         self._handbrake.value = val
 
+    ####################################################
+    @property
+    def inform(self):
+        return self._inform.value
+
+    @inform.setter
+    def inform(self, val):
+        self._inform.value = val
+
+    @property
+    def intervene(self):
+        return self._intervene.value
+
+    @intervene.setter
+    def intervene(self, val):
+        self._intervene.value = val
+    #######################################################
 
 class JoystickSharedVariables(SharedVariables):
     """"

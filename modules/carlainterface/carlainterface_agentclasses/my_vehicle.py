@@ -191,6 +191,8 @@ class MyVehicleProcess:
     def do(self):
         if self.settings.selected_input != 'None' and hasattr(self, 'spawned_vehicle'):
 
+
+
             self._control.steer = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].steering_angle / math.radians(450)
             self._control.reverse = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].reverse
             self._control.hand_brake = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].handbrake
@@ -217,7 +219,15 @@ class MyVehicleProcess:
                 self._control.throttle = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].throttle
 
             vehicle_location = self.spawned_vehicle.get_transform().location
+            ##################ADJUST SPEED ON LOCATION################################
             self.adjust_speed(vehicle_location=vehicle_location)
+            #####################INFORM##############################################
+            if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].inform:
+                self.display_hud_message("Driver Informed the Car")
+
+            ################INTERVENE#######################################
+            if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].intervene:
+                self.display_hud_message("Intervention Triggered! Stopping...")
 
             self.spawned_vehicle.apply_control(self._control)
             try:
@@ -263,16 +273,13 @@ class MyVehicleProcess:
             hud_location = vehicle_transform.location  # Adjust as needed
             carlaLoc = carla.Location(x=-0.45,y=0,z=0.7)
             newloc = hud_location + carlaLoc
-            print(hud_location,"HUD LOCATION")
-            print(carlaLoc,"CARLA LOCATION")
-            print(newloc)
-            # self.carlainterface_mp.world.debug.draw_string(
-            #     newloc,
-            #     message,
-            #     draw_shadow=True,
-            #     color=carla.Color(r=0, g=0, b=0),
-            #     life_time=duration
-            # )
+            self.carlainterface_mp.world.debug.draw_string(
+                newloc,
+                message,
+                draw_shadow=True,
+                color=carla.Color(r=0, g=0, b=0),
+                life_time=duration
+            )
 
     def destroy(self):
         if hasattr(self, 'spawned_vehicle') and self.spawned_vehicle is not None:
