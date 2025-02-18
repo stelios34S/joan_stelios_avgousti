@@ -29,6 +29,7 @@ class MyVehicleSettingsDialog(QtWidgets.QDialog):
         self.display_values()
 
 
+
         self.update_settings(self.settings)
 
     def show(self):
@@ -151,6 +152,12 @@ class MyVehicleProcess:
             self._BP = random.choice(self.carlainterface_mp.vehicle_blueprint_library.filter("vehicle." + self.settings.selected_car))
         self._control = carla.VehicleControl()
         self.world_map = self.carlainterface_mp.world.get_map()
+        # Define speed adjustment waypoints
+        self.speed_change_zones = [
+            {'location': carla.Location(x=-421.76039062, y=217.36910156, z=1.81382095), 'speed': 5, 'threshold': 10},  # Slow down near an obstacle
+           # {'location': carla.Location(x=300, y=200, z=0), 'speed': 5, 'threshold': 10},  # Stop behind a car
+           # {'location': carla.Location(x=350, y=250, z=0), 'speed': 20, 'threshold': 10},  # Speed up after obstacle
+        ]
         torque_curve = []
         gears = []
 
@@ -188,7 +195,6 @@ class MyVehicleProcess:
             self._control.reverse = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].reverse
             self._control.hand_brake = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].handbrake
             self._control.brake = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].brake
-            self.display_hud_message("LALALALALALAL")
             if self.settings.set_velocity:
                 vel_error = self.settings.velocity - (math.sqrt(
                     self.spawned_vehicle.get_velocity().x ** 2 + self.spawned_vehicle.get_velocity().y ** 2 + self.spawned_vehicle.get_velocity().z ** 2) * 3.6)
@@ -210,6 +216,9 @@ class MyVehicleProcess:
             else:
                 self._control.throttle = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].throttle
 
+            vehicle_location = self.spawned_vehicle.get_transform().location
+            self.adjust_speed(vehicle_location=vehicle_location)
+
             self.spawned_vehicle.apply_control(self._control)
             try:
                 self.calculate_plotter_road_arrays()
@@ -217,6 +226,36 @@ class MyVehicleProcess:
                 pass
 
         self.set_shared_variables()
+
+    def adjust_speed(self,vehicle_location):
+        for zone in self.speed_change_zones:
+            #self.display_hud_message()
+            #print(vehicle_location.distance(zone['location']) < zone['threshold'])
+            if vehicle_location.distance(zone['location']) < zone['threshold']:
+                self.display_hud_message("WE HIT THE SPOT")
+                self.set_target_speed(zone['speed'])
+                break  # Exit loop as soon as we find a matching zone
+
+    def set_target_speed(self, target_speed):
+        """
+        Adjusts the vehicle's speed gradually.
+        """
+        current_speed = math.sqrt(
+            self.spawned_vehicle.get_velocity().x ** 2 +
+            self.spawned_vehicle.get_velocity().y ** 2 +
+            self.spawned_vehicle.get_velocity().z ** 2
+        ) * 3.6  # Convert to km/h
+
+        speed_error = target_speed - current_speed
+
+        # Smooth throttle/brake transition
+        if speed_error > 0:
+            self._control.throttle = min(1.0, (speed_error * 0.05))  # Accelerate
+            self._control.brake = 0
+        else:
+            self._control.brake = min(1.0, (-speed_error * 0.05))  # Decelerate
+            self._control.throttle = 0
+
 
     def display_hud_message(self, message, duration=0.3):
         if hasattr(self, 'spawned_vehicle'):
