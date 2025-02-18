@@ -74,6 +74,9 @@ class JOANJoystickProcess:
                 self.handbrake = False
                 self.reverse = False
 
+            ##TODO:  IF JOYSTICKDATA[self.settings.butonChannel] == self.settings.gearup_value
+            ##TODO : IF JOYSTICKDATA[self.settings.butonChannel] == self.settings.GEARDOWN
+
             if self.settings.use_double_steering_resolution:
                 self.steer = (((joystick_data[self.settings.first_steer_channel]) + (
                     joystick_data[self.settings.second_steer_channel]) * 256) / (256 * 256)) * (

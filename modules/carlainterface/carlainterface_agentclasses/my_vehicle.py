@@ -154,7 +154,7 @@ class MyVehicleProcess:
         self.world_map = self.carlainterface_mp.world.get_map()
         # Define speed adjustment waypoints
         self.speed_change_zones = [
-            {'location': carla.Location(x=-421.76039062, y=217.36910156, z=1.81382095), 'speed': 5, 'threshold': 10},  # Slow down near an obstacle
+            {'location': carla.Location(x=-421.76039062, y=217.36910156, z=1.81382095), 'speed': 20, 'threshold': 10},  # Slow down near an obstacle
            # {'location': carla.Location(x=300, y=200, z=0), 'speed': 5, 'threshold': 10},  # Stop behind a car
            # {'location': carla.Location(x=350, y=250, z=0), 'speed': 20, 'threshold': 10},  # Speed up after obstacle
         ]
