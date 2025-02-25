@@ -155,9 +155,9 @@ class MyVehicleProcess:
 
         # Define speed adjustment waypoints
         self.trigger_boxes = [
-            {'location': carla.Location(x=-428.43238281, y=206.46728516, z=1.8584613), 'behavior': 'stop', 'target_speed': 0},
+            {'location': carla.Location(x=-436.92488281, y=193.64867188, z=1.78496338), 'behavior': 'continue', 'target_speed': 40},
             # Stop box
-            #{'location': carla.Location(x=300, y=200, z=0), 'behavior': 'continue', 'target_speed': 30},
+            {'location': carla.Location(x=-458.95835938, y=149.92051758, z=1.79914368), 'behavior': 'stop', 'target_speed': 0},
             # Slight slowdown
             #{'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
         ]
