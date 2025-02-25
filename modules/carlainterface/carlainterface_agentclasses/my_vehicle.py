@@ -14,7 +14,6 @@ from PyQt5.QtWidgets import QMessageBox
 class MyVehicleSettingsDialog(QtWidgets.QDialog):
     def __init__(self, settings, module_manager, parent=None):
         super().__init__(parent)
-
         self.settings = settings
         self.module_manager = module_manager
         self.carla_interface_overall_settings = self.module_manager.module_settings
@@ -152,12 +151,18 @@ class MyVehicleProcess:
             self._BP = random.choice(self.carlainterface_mp.vehicle_blueprint_library.filter("vehicle." + self.settings.selected_car))
         self._control = carla.VehicleControl()
         self.world_map = self.carlainterface_mp.world.get_map()
+
+
         # Define speed adjustment waypoints
-        self.speed_change_zones = [
-            {'location': carla.Location(x=-421.76039062, y=217.36910156, z=1.81382095), 'speed': 20, 'threshold': 10},  # Slow down near an obstacle
-           # {'location': carla.Location(x=300, y=200, z=0), 'speed': 5, 'threshold': 10},  # Stop behind a car
-           # {'location': carla.Location(x=350, y=250, z=0), 'speed': 20, 'threshold': 10},  # Speed up after obstacle
+        self.trigger_boxes = [
+            {'location': carla.Location(x=-428.43238281, y=206.46728516, z=1.8584613), 'behavior': 'stop', 'target_speed': 0},
+            # Stop box
+            #{'location': carla.Location(x=300, y=200, z=0), 'behavior': 'continue', 'target_speed': 30},
+            # Slight slowdown
+            #{'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
         ]
+        self.trigger_active = None
+
         torque_curve = []
         gears = []
 
@@ -188,11 +193,21 @@ class MyVehicleProcess:
                 physics.gear_switch_time = 0
                 self.spawned_vehicle.apply_physics_control(physics)
 
+    def get_current_speed(self):
+        """
+        Calculates the current speed of the vehicle in km/h.
+        """
+        current_speed = math.sqrt(
+            self.spawned_vehicle.get_velocity().x ** 2 +
+            self.spawned_vehicle.get_velocity().y ** 2 +
+            self.spawned_vehicle.get_velocity().z ** 2
+        ) * 3.6  # Convert to km/h
+
+        return current_speed
+
+
     def do(self):
         if self.settings.selected_input != 'None' and hasattr(self, 'spawned_vehicle'):
-
-
-
             self._control.steer = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].steering_angle / math.radians(450)
             self._control.reverse = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].reverse
             self._control.hand_brake = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].handbrake
@@ -218,16 +233,41 @@ class MyVehicleProcess:
             else:
                 self._control.throttle = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].throttle
 
-            vehicle_location = self.spawned_vehicle.get_transform().location
-            ##################ADJUST SPEED ON LOCATION################################
-            self.adjust_speed(vehicle_location=vehicle_location)
-            #####################INFORM##############################################
-            if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].inform:
-                self.display_hud_message("Driver Informed the Car")
 
-            ################INTERVENE#######################################
-            if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].intervene:
-                self.display_hud_message("Intervention Triggered! Stopping...")
+
+            ##################ADJUST SPEED ON LOCATION################################
+            vehicle_location = self.spawned_vehicle.get_transform().location
+            trigger_behaviour = self.adjust_speed(vehicle_location=vehicle_location)
+
+            ##################### INFORM BUTTON (I key) ############################
+            if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].inform:
+                if trigger_behaviour == "stop":  # If the box wants a stop, brake harder
+                    self._control.brake = min(1.0, self._control.brake + 0.3)  # Stronger braking
+                elif trigger_behaviour in ["continue", "slowdown"]:  # If it's just a slowdown, slow down more
+                    self._control.throttle = max(0.0, self._control.throttle - 0.3)
+                else:  # No trigger box, temporary slow down
+                    self._control.throttle = max(0.0, self._control.throttle - 0.3)
+
+            ##################### INTERVENE BUTTON (J key) ############################
+            elif self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].intervene:
+                if trigger_behaviour == "stop":
+                    # Car originally planned to stop -> Override and keep moving
+                    #self.display_hud_message("Intervene: Overriding stop, continuing!")
+                    self._control.brake = 0
+                    self._control.throttle = 0.5  # Resume movement
+
+                elif trigger_behaviour in ["continue", "slowdown"]:
+                    # Car originally planned to continue -> Force a stop
+                    #self.display_hud_message("Intervene: Overriding continue, stopping!")
+                    self._control.brake = 1.0  # Full brake
+
+                elif trigger_behaviour is None:
+                    # No trigger box -> Stop the car for a short time, then resume
+                    #self.display_hud_message("Intervene: Temporary Stop!")
+                    self._control.brake = 1.0
+                    QtCore.QTimer.singleShot(2000, lambda: setattr(self._control, 'brake', 0))  # Resume after 2 sec
+
+
 
             self.spawned_vehicle.apply_control(self._control)
             try:
@@ -237,14 +277,37 @@ class MyVehicleProcess:
 
         self.set_shared_variables()
 
-    def adjust_speed(self,vehicle_location):
-        for zone in self.speed_change_zones:
-            #self.display_hud_message()
-            #print(vehicle_location.distance(zone['location']) < zone['threshold'])
-            if vehicle_location.distance(zone['location']) < zone['threshold']:
-                self.display_hud_message("WE HIT THE SPOT")
-                self.set_target_speed(zone['speed'])
-                break  # Exit loop as soon as we find a matching zone
+    # def adjust_speed(self, vehicle_location):
+    #     """
+    #     Adjusts vehicle speed based on predefined trigger boxes.
+    #     """
+    #     for box in self.trigger_boxes:
+    #         if vehicle_location.distance(box['location']) < 3:  # Within 5m of a trigger box
+    #             self.display_hud_message(f"Trigger: {box['behavior'].capitalize()}")
+    #             self.set_target_speed(box['target_speed'])  # Adjust to predefined speed
+    #             return box['behavior']  # Return the behavior type (stop, slowdown, continue)
+    #     return None  # No active trigger box
+
+    def adjust_speed(self, vehicle_location):
+        """
+        Adjusts vehicle speed based on predefined trigger boxes.
+        """
+        new_trigger = None  # Default to None
+
+        for box in self.trigger_boxes:
+            if vehicle_location.distance(box['location']) < 5:  # Inside trigger box
+                new_trigger = box['behavior']
+                self.display_hud_message(f"Trigger: {box['behavior'].capitalize()}")
+                self.set_target_speed(box['target_speed'])  # Adjust speed
+                break  # Exit loop once a trigger is found
+
+        # Only reset trigger if the vehicle left the last trigger box
+        if self.trigger_active and new_trigger is None:
+            self.trigger_active = None
+            self.display_hud_message("Exited Trigger Box")
+
+        self.trigger_active = new_trigger  # Store active trigger behavior
+        return new_trigger
 
     def set_target_speed(self, target_speed):
         """
