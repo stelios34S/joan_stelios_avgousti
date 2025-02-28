@@ -1,6 +1,6 @@
 import random, os, math
 import numpy as np
-
+import threading
 from tools.carlaimporter import carla
 
 from PyQt5 import uic, QtWidgets
@@ -155,24 +155,26 @@ class MyVehicleProcess:
 
         # Define speed adjustment waypoints
         self.trigger_boxes = [
-            {'location': carla.Location(x=-436.92488281, y=193.64867188, z=1.78496338), 'behavior': 'continue', 'target_speed': 40},
+            {'location': carla.Location(x=-436.92488281, y=193.64867188, z=1.78496338), 'behavior': 'continue', 'target_speed': 30},
             # Stop box
             {'location': carla.Location(x=-458.95835938, y=149.92051758, z=1.79914368), 'behavior': 'stop', 'target_speed': 0},
             # Slight slowdown
             #{'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
         ]
+        ## Holds the current trigger which is active (continue/stop)
         self.trigger_active = None
-
+        ## Here to allow us to mess wit hthe speed while in cruise control
+        self.user_override_speed = self.settings.velocity
+        ###Resetsthe speed to cruise control after trigger box
+        self.recovery_timer = None  # Store a reference to the timer
+        # self.recovery_timer = QtCore.QTimer()
+        # self.recovery_timer.setSingleShot(True)
+        # self.recovery_timer.timeout.connect(self.reset_to_standard_speed)
         torque_curve = []
         gears = []
 
         torque_curve.append(carla.Vector2D(x=0, y=600))
         torque_curve.append(carla.Vector2D(x=14000, y=600))
-        gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
-        gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
-        gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
-        gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
-        gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
         gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
         gears.append(carla.GearPhysicsControl(ratio=7.73, down_ratio=0.5, up_ratio=1))
 
@@ -213,7 +215,7 @@ class MyVehicleProcess:
             self._control.hand_brake = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].handbrake
             self._control.brake = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].brake
             if self.settings.set_velocity:
-                vel_error = self.settings.velocity - (math.sqrt(
+                vel_error = self.user_override_speed - (math.sqrt(
                     self.spawned_vehicle.get_velocity().x ** 2 + self.spawned_vehicle.get_velocity().y ** 2 + self.spawned_vehicle.get_velocity().z ** 2) * 3.6)
                 vel_error_rate = (math.sqrt(
                     self.spawned_vehicle.get_acceleration().x ** 2 + self.spawned_vehicle.get_acceleration().y ** 2 + self.spawned_vehicle.get_acceleration().z ** 2) * 3.6)
@@ -239,34 +241,31 @@ class MyVehicleProcess:
             vehicle_location = self.spawned_vehicle.get_transform().location
             trigger_behaviour = self.adjust_speed(vehicle_location=vehicle_location)
 
-            ##################### INFORM BUTTON (I key) ############################
+            ##################### INFORM BUTTON (I key)(TAP) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].inform:
-                if trigger_behaviour == "stop":  # If the box wants a stop, brake harder
-                    self._control.brake = min(1.0, self._control.brake + 0.3)  # Stronger braking
-                elif trigger_behaviour in ["continue", "slowdown"]:  # If it's just a slowdown, slow down more
-                    self._control.throttle = max(0.0, self._control.throttle - 0.3)
-                else:  # No trigger box, temporary slow down
-                    self._control.throttle = max(0.0, self._control.throttle - 0.3)
-
+                if self.trigger_active == "stop":  # If the box wants a stop, brake harder
+                    self._control.brake = 1.0  # Max braking force
+                    self._control.throttle = 0
+                    self.user_override_speed = 0
+                elif self.trigger_active == "continue":
+                    self.user_override_speed = max(15, self.user_override_speed - 10)  # Temporary slowdown
+                else:
+                    self.user_override_speed = max(25,self.user_override_speed - 10)
+                self.start_recovery_timer(5)
             ##################### INTERVENE BUTTON (J key) ############################
-            elif self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].intervene:
-                if trigger_behaviour == "stop":
+            if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].intervene:
+                if self.trigger_active == "stop":
                     # Car originally planned to stop -> Override and keep moving
-                    #self.display_hud_message("Intervene: Overriding stop, continuing!")
-                    self._control.brake = 0
-                    self._control.throttle = 0.5  # Resume movement
-
-                elif trigger_behaviour in ["continue", "slowdown"]:
-                    # Car originally planned to continue -> Force a stop
-                    #self.display_hud_message("Intervene: Overriding continue, stopping!")
-                    self._control.brake = 1.0  # Full brake
-
-                elif trigger_behaviour is None:
-                    # No trigger box -> Stop the car for a short time, then resume
-                    #self.display_hud_message("Intervene: Temporary Stop!")
-                    self._control.brake = 1.0
-                    QtCore.QTimer.singleShot(2000, lambda: setattr(self._control, 'brake', 0))  # Resume after 2 sec
-
+                    self.user_override_speed = max(15, self.settings.velocity * 0.5)
+                elif self.trigger_active == "continue":
+                    # Reduce speed to zero, then recover after 5 seconds
+                    self.user_override_speed = 0
+                    self._control.brake = 1
+                else:
+                    self.user_override_speed = 0
+                    self._control.brake = 1
+                # Set recovery timer (after 5 sec, return to normal speed)
+                self.start_recovery_timer(5)
 
 
             self.spawned_vehicle.apply_control(self._control)
@@ -277,16 +276,30 @@ class MyVehicleProcess:
 
         self.set_shared_variables()
 
-    # def adjust_speed(self, vehicle_location):
-    #     """
-    #     Adjusts vehicle speed based on predefined trigger boxes.
-    #     """
-    #     for box in self.trigger_boxes:
-    #         if vehicle_location.distance(box['location']) < 3:  # Within 5m of a trigger box
-    #             self.display_hud_message(f"Trigger: {box['behavior'].capitalize()}")
-    #             self.set_target_speed(box['target_speed'])  # Adjust to predefined speed
-    #             return box['behavior']  # Return the behavior type (stop, slowdown, continue)
-    #     return None  # No active trigger box
+    def apply_speed_control(self):
+        """Applies the current target speed smoothly."""
+        current_speed = self.get_current_speed()
+        speed_error = self.user_override_speed - current_speed
+
+        if speed_error > 0:
+            self._control.throttle = min(1.0, speed_error * 0.05)  # Accelerate smoothly
+            self._control.brake = 0
+        else:
+            self._control.brake = min(1.0, -speed_error * 0.05)  # Brake smoothly
+            self._control.throttle = 0
+
+    def start_recovery_timer(self,time):
+        """Starts a timer to restore speed after a delay."""
+        if self.recovery_timer and self.recovery_timer.is_alive():
+            self.recovery_timer.cancel()  # Cancel any existing timer before starting a new one
+
+        self.recovery_timer = threading.Timer(time, self.reset_to_standard_speed)  # 5-second delay
+        self.recovery_timer.start()
+
+    def reset_to_standard_speed(self):
+        """Gradually restores the car to its normal speed after interventions."""
+        self.user_override_speed = self.settings.velocity  # Restore standard velocity
+
 
     def adjust_speed(self, vehicle_location):
         """
@@ -297,15 +310,25 @@ class MyVehicleProcess:
         for box in self.trigger_boxes:
             if vehicle_location.distance(box['location']) < 5:  # Inside trigger box
                 new_trigger = box['behavior']
-                self.display_hud_message(f"Trigger: {box['behavior'].capitalize()}")
-                self.set_target_speed(box['target_speed'])  # Adjust speed
-                break  # Exit loop once a trigger is found
+                if self.trigger_active != new_trigger:
+                    self.display_hud_message(f"Trigger: {box['behavior'].capitalize()}")
+
+                    if box['behavior'] == "stop":
+                        self._control.brake = 0.5  # medium braking force
+                        self._control.throttle = 0
+                        self.user_override_speed = 0
+                        self.start_recovery_timer(7)
+
+                    if box['behavior'] == "continue":
+                        self.user_override_speed = max(10,
+                                                       self.user_override_speed - 10)  # Prevent zero speed in movement areas
+                        self.start_recovery_timer(5)
+                    break  # Exit loop once a trigger is found
 
         # Only reset trigger if the vehicle left the last trigger box
         if self.trigger_active and new_trigger is None:
             self.trigger_active = None
             self.display_hud_message("Exited Trigger Box")
-
         self.trigger_active = new_trigger  # Store active trigger behavior
         return new_trigger
 
@@ -330,7 +353,7 @@ class MyVehicleProcess:
             self._control.throttle = 0
 
 
-    def display_hud_message(self, message, duration=0.3):
+    def display_hud_message(self, message, duration=2):
         if hasattr(self, 'spawned_vehicle'):
             vehicle_transform = self.spawned_vehicle.get_transform()
             hud_location = vehicle_transform.location  # Adjust as needed
