@@ -27,8 +27,6 @@ class MyVehicleSettingsDialog(QtWidgets.QDialog):
         self.btn_update.clicked.connect(lambda: self.update_settings(self.settings))
         self.display_values()
 
-
-
         self.update_settings(self.settings)
 
     def show(self):
@@ -128,7 +126,8 @@ class MyVehicleSettingsDialog(QtWidgets.QDialog):
             # update available controllers according to current settings:
             self.combo_haptic_controllers.clear()
             self.combo_haptic_controllers.addItem('None')
-            HapticControllerManagerSettings = self.module_manager.central_settings.get_settings(JOANModules.HAPTIC_CONTROLLER_MANAGER)
+            HapticControllerManagerSettings = self.module_manager.central_settings.get_settings(
+                JOANModules.HAPTIC_CONTROLLER_MANAGER)
             for haptic_controller in HapticControllerManagerSettings.haptic_controllers.values():
                 self.combo_haptic_controllers.addItem(str(haptic_controller))
             idx = self.combo_haptic_controllers.findText(
@@ -148,28 +147,31 @@ class MyVehicleProcess:
 
         self._control = carla.VehicleControl()
         if self.settings.selected_car != 'None':
-            self._BP = random.choice(self.carlainterface_mp.vehicle_blueprint_library.filter("vehicle." + self.settings.selected_car))
-        self._control = carla.VehicleControl()
+            self._BP = random.choice(
+                self.carlainterface_mp.vehicle_blueprint_library.filter("vehicle." + self.settings.selected_car))
         self.world_map = self.carlainterface_mp.world.get_map()
 
-
-        # Define speed adjustment waypoints
+        # Define speed adjustment trigger boxes
         self.trigger_boxes = [
-            {'location': carla.Location(x=-436.92488281, y=193.64867188, z=1.78496338), 'behavior': 'continue', 'target_speed': 30},
+            {'location': carla.Location(x=-436.92488281, y=193.64867188, z=1.78496338), 'behavior': 'continue',
+             'target_speed': 30},
             # Stop box
-            {'location': carla.Location(x=-462.91152344, y=117.94867188, z=1.79915588), 'behavior': 'stop', 'target_speed': 0},
+            {'location': carla.Location(x=-462.91152344, y=117.94867188, z=1.79915588), 'behavior': 'stop',
+             'target_speed': 0},
             # Slight slowdown
-            #{'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
+            # {'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
         ]
+        # Define waypoints the car will follow
+        self.waypoints = self.define_manual_waypoints()
+        self.current_waypoint_index = 0
+
         ## Holds the current trigger which is active (continue/stop)
         self.trigger_active = None
         ## Here to allow us to mess wit hthe speed while in cruise control
         self.user_override_speed = self.settings.velocity
-        ###Resetsthe speed to cruise control after trigger box
+        ###Resets the speed to cruise control after trigger box
         self.recovery_timer = None  # Store a reference to the timer
-        # self.recovery_timer = QtCore.QTimer()
-        # self.recovery_timer.setSingleShot(True)
-        # self.recovery_timer.timeout.connect(self.reset_to_standard_speed)
+
         torque_curve = []
         gears = []
 
@@ -180,8 +182,10 @@ class MyVehicleProcess:
 
         if self.settings.selected_spawnpoint != 'None':
             if self.settings.selected_car != 'None':
-                self.spawned_vehicle = self.carlainterface_mp.world.spawn_actor(self._BP, self.carlainterface_mp.spawn_point_objects[
-                    self.carlainterface_mp.spawn_points.index(self.settings.selected_spawnpoint)])
+                self.spawned_vehicle = self.carlainterface_mp.world.spawn_actor(self._BP,
+                                                                                self.carlainterface_mp.spawn_point_objects[
+                                                                                    self.carlainterface_mp.spawn_points.index(
+                                                                                        self.settings.selected_spawnpoint)])
                 physics = self.spawned_vehicle.get_physics_control()
                 physics.torque_curve = torque_curve
                 physics.max_rpm = 14000
@@ -195,30 +199,102 @@ class MyVehicleProcess:
                 physics.gear_switch_time = 0
                 self.spawned_vehicle.apply_physics_control(physics)
 
+    def steer_to_waypoint(self):
+        """
+        Adjusts the vehicle's steering angle to follow the waypoints.
+        """
+        next_wp = self.get_next_waypoint()
+        if next_wp:
+            vehicle_transform = self.spawned_vehicle.get_transform()
+            vehicle_location = vehicle_transform.location
+            vehicle_rotation = vehicle_transform.rotation.yaw  # Vehicle heading
+
+            target_location = next_wp.location
+            target_vector = np.array([target_location.x - vehicle_location.x, target_location.y - vehicle_location.y])
+            vehicle_vector = np.array(
+                [math.cos(math.radians(vehicle_rotation)), math.sin(math.radians(vehicle_rotation))])
+
+            # Compute the steering angle error
+            angle_diff = np.arctan2(np.cross(vehicle_vector, target_vector), np.dot(vehicle_vector, target_vector))
+            controller = PIDController(kp=0.6,ki=0.05,kd=0.3)
+            steering_correction = controller.compute(angle_diff)
+            # Apply a scaling factor to avoid over-steering
+            if abs(steering_correction) < 0.03:
+                steering_correction = 0
+
+                # Apply a **moving average** for smoother steering
+            self._control.steer = (0.7 * self._control.steer) + (0.3 * steering_correction)
+
+            # If close enough, move to next waypoint
+            if vehicle_location.distance(target_location) < 3:  # Adjust distance threshold if needed
+                self.current_waypoint_index += 1
+                print(f"🚗 Moving to waypoint {self.current_waypoint_index}")
+
+    def get_next_waypoint(self):
+        """
+        Gets the next waypoint in the list.
+        """
+        if self.current_waypoint_index >= len(self.waypoints):
+            print("✅ Circuit Completed!")
+            return None  # No more waypoints, the circuit is finished
+
+        return self.waypoints[self.current_waypoint_index]
+
+    def define_manual_waypoints(self):
+        """
+        Manually define waypoints for the circuit.
+        Each waypoint is a carla.Transform(location, rotation).
+        """
+        waypoints = [
+            carla.Transform(carla.Location(x=-430.32046875, y=201.92390625, z=0.56185181), carla.Rotation(yaw=0)),
+            carla.Transform(carla.Location(x=-437.50949219, y=189.75666016, z=0.59654037), carla.Rotation(yaw=0)),
+            carla.Transform(carla.Location(x=-446.52425781, y=184.30314453, z=0.5159288), carla.Rotation(yaw=0)),
+            carla.Transform(carla.Location(x=-450.80980469, y=167.03285156, z=0.72857117), carla.Rotation(yaw=0)),
+            carla.Transform(carla.Location(x=-458.60007812, y=144.63166992, z=0.61054489), carla.Rotation(yaw=0)),
+            carla.Transform(carla.Location(x=-461.21636719, y=131.04544922, z=0.60399445), carla.Rotation(yaw=0)),
+            carla.Transform(carla.Location(x=-461.56875, y=117.49168945, z=0.58686279), carla.Rotation(yaw=0)),
+            carla.Transform(carla.Location(x=-468.99507812, y=104.41443359, z=0.58396484), carla.Rotation(yaw=0)),
+            carla.Transform(carla.Location(x=-458.55988281, y=91.75417969, z=0.54032242), carla.Rotation(yaw=0)),
+            carla.Transform(carla.Location(x=-451.46929688, y=73.27376953, z=0.52080627), carla.Rotation(yaw=0)),
+            # Add more waypoints as needed...
+            # Add more waypoints as needed...
+        ]
+        return waypoints
+
     def get_current_speed(self):
         """
         Calculates the current speed of the vehicle in km/h.
         """
+        if not hasattr(self, 'spawned_vehicle') or self.spawned_vehicle is None:
+            return 0  # Avoid errors if the vehicle doesn't exist
+
+        velocity = self.spawned_vehicle.get_velocity()
         current_speed = math.sqrt(
-            self.spawned_vehicle.get_velocity().x ** 2 +
-            self.spawned_vehicle.get_velocity().y ** 2 +
-            self.spawned_vehicle.get_velocity().z ** 2
+            velocity.x ** 2 +
+            velocity.y ** 2 +
+            velocity.z ** 2
         ) * 3.6  # Convert to km/h
 
         return current_speed
 
-
     def do(self):
         if self.settings.selected_input != 'None' and hasattr(self, 'spawned_vehicle'):
-            self._control.steer = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].steering_angle / math.radians(450)
-            self._control.reverse = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].reverse
-            self._control.hand_brake = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].handbrake
-            self._control.brake = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].brake
+            self.steer_to_waypoint()
+            # self._control.steer = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].steering_angle / math.radians(450)
+
+            self._control.reverse = self.carlainterface_mp.shared_variables_hardware.inputs[
+                self.settings.selected_input].reverse
+            self._control.hand_brake = self.carlainterface_mp.shared_variables_hardware.inputs[
+                self.settings.selected_input].handbrake
+            self._control.brake = self.carlainterface_mp.shared_variables_hardware.inputs[
+                self.settings.selected_input].brake
+
             if self.settings.set_velocity:
-                vel_error = self.user_override_speed - (math.sqrt(
-                    self.spawned_vehicle.get_velocity().x ** 2 + self.spawned_vehicle.get_velocity().y ** 2 + self.spawned_vehicle.get_velocity().z ** 2) * 3.6)
+                vel_error = self.user_override_speed - self.get_current_speed()
                 vel_error_rate = (math.sqrt(
-                    self.spawned_vehicle.get_acceleration().x ** 2 + self.spawned_vehicle.get_acceleration().y ** 2 + self.spawned_vehicle.get_acceleration().z ** 2) * 3.6)
+                    self.spawned_vehicle.get_acceleration().x ** 2 +
+                    self.spawned_vehicle.get_acceleration().y ** 2 +
+                    self.spawned_vehicle.get_acceleration().z ** 2) * 3.6)
                 error_velocity = [vel_error, vel_error_rate]
 
                 pd_vel_output = self.velocity_PD_controller(error_velocity)
@@ -233,13 +309,13 @@ class MyVehicleProcess:
                     else:
                         self._control.throttle = 0
             else:
-                self._control.throttle = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].throttle
-
-
+                self._control.throttle = self.carlainterface_mp.shared_variables_hardware.inputs[
+                    self.settings.selected_input].throttle
 
             ##################ADJUST SPEED ON LOCATION################################
             vehicle_location = self.spawned_vehicle.get_transform().location
             trigger_behaviour = self.adjust_speed(vehicle_location=vehicle_location)
+
 
             ##################### INFORM BUTTON (I key)(TAP) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].inform:
@@ -250,8 +326,10 @@ class MyVehicleProcess:
                 elif self.trigger_active == "continue":
                     self.user_override_speed = max(15, self.user_override_speed - 10)  # Temporary slowdown
                 else:
-                    self.user_override_speed = max(25,self.user_override_speed - 10)
+                    self.user_override_speed = max(25, self.user_override_speed - 10)
                 self.start_recovery_timer(5)
+
+
             ##################### INTERVENE BUTTON (J key) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].intervene:
                 if self.trigger_active == "stop":
@@ -268,6 +346,7 @@ class MyVehicleProcess:
                 self.start_recovery_timer(5)
 
 
+
             self.spawned_vehicle.apply_control(self._control)
             try:
                 self.calculate_plotter_road_arrays()
@@ -276,19 +355,8 @@ class MyVehicleProcess:
 
         self.set_shared_variables()
 
-    def apply_speed_control(self):
-        """Applies the current target speed smoothly."""
-        current_speed = self.get_current_speed()
-        speed_error = self.user_override_speed - current_speed
 
-        if speed_error > 0:
-            self._control.throttle = min(1.0, speed_error * 0.05)  # Accelerate smoothly
-            self._control.brake = 0
-        else:
-            self._control.brake = min(1.0, -speed_error * 0.05)  # Brake smoothly
-            self._control.throttle = 0
-
-    def start_recovery_timer(self,time):
+    def start_recovery_timer(self, time):
         """Starts a timer to restore speed after a delay."""
         if self.recovery_timer and self.recovery_timer.is_alive():
             self.recovery_timer.cancel()  # Cancel any existing timer before starting a new one
@@ -300,7 +368,6 @@ class MyVehicleProcess:
         """Gradually restores the car to its normal speed after interventions."""
         self.user_override_speed = self.settings.velocity  # Restore standard velocity
 
-
     def adjust_speed(self, vehicle_location):
         """
         Adjusts vehicle speed based on predefined trigger boxes.
@@ -311,7 +378,7 @@ class MyVehicleProcess:
             if vehicle_location.distance(box['location']) < 5:  # Inside trigger box
                 new_trigger = box['behavior']
                 if self.trigger_active != new_trigger:
-                    self.display_hud_message(f"Trigger: {box['behavior'].capitalize()}")
+                    #self.display_hud_message(f"Trigger: {box['behavior'].capitalize()}")
 
                     if box['behavior'] == "stop":
                         self._control.brake = 0.5  # medium braking force
@@ -328,36 +395,35 @@ class MyVehicleProcess:
         # Only reset trigger if the vehicle left the last trigger box
         if self.trigger_active and new_trigger is None:
             self.trigger_active = None
-            self.display_hud_message("Exited Trigger Box")
+            #self.display_hud_message("Exited Trigger Box")
         self.trigger_active = new_trigger  # Store active trigger behavior
         return new_trigger
 
-    def set_target_speed(self, target_speed):
-        """
-        Adjusts the vehicle's speed gradually.
-        """
-        current_speed = math.sqrt(
-            self.spawned_vehicle.get_velocity().x ** 2 +
-            self.spawned_vehicle.get_velocity().y ** 2 +
-            self.spawned_vehicle.get_velocity().z ** 2
-        ) * 3.6  # Convert to km/h
-
-        speed_error = target_speed - current_speed
-
-        # Smooth throttle/brake transition
-        if speed_error > 0:
-            self._control.throttle = min(1.0, (speed_error * 0.05))  # Accelerate
-            self._control.brake = 0
-        else:
-            self._control.brake = min(1.0, (-speed_error * 0.05))  # Decelerate
-            self._control.throttle = 0
-
+    # def set_target_speed(self, target_speed):
+    #     """
+    #     Adjusts the vehicle's speed gradually.
+    #     """
+    #     current_speed = math.sqrt(
+    #         self.spawned_vehicle.get_velocity().x ** 2 +
+    #         self.spawned_vehicle.get_velocity().y ** 2 +
+    #         self.spawned_vehicle.get_velocity().z ** 2
+    #     ) * 3.6  # Convert to km/h
+    #
+    #     speed_error = target_speed - current_speed
+    #
+    #     # Smooth throttle/brake transition
+    #     if speed_error > 0:
+    #         self._control.throttle = min(1.0, (speed_error * 0.05))  # Accelerate
+    #         self._control.brake = 0
+    #     else:
+    #         self._control.brake = min(1.0, (-speed_error * 0.05))  # Decelerate
+    #         self._control.throttle = 0
 
     def display_hud_message(self, message, duration=2):
         if hasattr(self, 'spawned_vehicle'):
             vehicle_transform = self.spawned_vehicle.get_transform()
             hud_location = vehicle_transform.location  # Adjust as needed
-            carlaLoc = carla.Location(x=-0.45,y=0,z=0.7)
+            carlaLoc = carla.Location(x=-0.45, y=0, z=0.7)
             newloc = hud_location + carlaLoc
             self.carlainterface_mp.world.debug.draw_string(
                 newloc,
@@ -432,14 +498,18 @@ class MyVehicleProcess:
 
             iter_x = 0
             for roadpoint_x in data_road_x:
-                data_road_x_outer.append(roadpoint_x - math.sin(data_road_psi[iter_x]) * data_road_lanewidth[iter_x] / 2)
-                data_road_x_inner.append(roadpoint_x + math.sin(data_road_psi[iter_x]) * data_road_lanewidth[iter_x] / 2)
+                data_road_x_outer.append(
+                    roadpoint_x - math.sin(data_road_psi[iter_x]) * data_road_lanewidth[iter_x] / 2)
+                data_road_x_inner.append(
+                    roadpoint_x + math.sin(data_road_psi[iter_x]) * data_road_lanewidth[iter_x] / 2)
                 iter_x = iter_x + 1
 
             iter_y = 0
             for roadpoint_y in data_road_y:
-                data_road_y_outer.append(roadpoint_y - math.cos(data_road_psi[iter_y]) * data_road_lanewidth[iter_y] / 2)
-                data_road_y_inner.append(roadpoint_y + math.cos(data_road_psi[iter_y]) * data_road_lanewidth[iter_y] / 2)
+                data_road_y_outer.append(
+                    roadpoint_y - math.cos(data_road_psi[iter_y]) * data_road_lanewidth[iter_y] / 2)
+                data_road_y_inner.append(
+                    roadpoint_y + math.cos(data_road_psi[iter_y]) * data_road_lanewidth[iter_y] / 2)
                 iter_y = iter_y + 1
 
             # set shared road variables:
@@ -476,7 +546,8 @@ class MyVehicleProcess:
                                                                self.spawned_vehicle.get_angular_velocity().z]
 
             rotation_matrix = self.get_rotation_matrix_from_carla(rotation.roll, rotation.pitch, rotation.yaw)
-            velocities_in_vehicle_frame = np.linalg.inv(rotation_matrix) @ np.array([linear_velocity.x, linear_velocity.y, linear_velocity.z])
+            velocities_in_vehicle_frame = np.linalg.inv(rotation_matrix) @ np.array(
+                [linear_velocity.x, linear_velocity.y, linear_velocity.z])
             self.shared_variables.velocities_in_vehicle_frame = velocities_in_vehicle_frame
 
             self.shared_variables.accelerations = [self.spawned_vehicle.get_acceleration().x,
@@ -515,6 +586,25 @@ class MyVehicleProcess:
 
         rotation_matrix = yaw_matrix @ pitch_matrix @ roll_matrix
         return rotation_matrix
+
+
+class PIDController:
+    """Basic PID controller for smoother steering adjustments."""
+
+    def __init__(self, kp=1.0, ki=0.0, kd=0.1):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.prev_error = 0
+        self.integral = 0
+
+    def compute(self, error):
+        """Calculate the PID output based on error (steering correction)."""
+        self.integral += error
+        derivative = error - self.prev_error
+        output = (self.kp * error) + (self.ki * self.integral) + (self.kd * derivative)
+        self.prev_error = error
+        return max(-1.0, min(1.0, output))  # Clamp output to valid steering range (-1 to 1)
 
 
 class MyVehicleSettings:
