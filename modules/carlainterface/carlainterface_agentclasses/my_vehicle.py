@@ -216,14 +216,16 @@ class MyVehicleProcess:
 
             # Compute the steering angle error
             angle_diff = np.arctan2(np.cross(vehicle_vector, target_vector), np.dot(vehicle_vector, target_vector))
-            controller = PIDController(kp=0.6,ki=0.05,kd=0.3)
+            controller = PIDController(kp=0.2,ki=0.1,kd=0.6)
             steering_correction = controller.compute(angle_diff)
-            # Apply a scaling factor to avoid over-steering
-            if abs(steering_correction) < 0.03:
-                steering_correction = 0
 
+            # Apply a scaling factor to avoid over-steering
+            if abs(steering_correction) < 0.1:
+                print(steering_correction)
+                steering_correction = 0
+            self._control.steer = (0.9 * self._control.steer) + (0.1 * steering_correction)
                 # Apply a **moving average** for smoother steering
-            self._control.steer = (0.7 * self._control.steer) + (0.3 * steering_correction)
+            #self._control.steer = (0.7 * self._control.steer) + (0.3 * steering_correction)
 
             # If close enough, move to next waypoint
             if vehicle_location.distance(target_location) < 3:  # Adjust distance threshold if needed
