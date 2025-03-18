@@ -151,18 +151,23 @@ class MyVehicleProcess:
                 self.carlainterface_mp.vehicle_blueprint_library.filter("vehicle." + self.settings.selected_car))
         self.world_map = self.carlainterface_mp.world.get_map()
 
+
+        ####DEFINE TRIGGER BOXES TO STOP OR SLO DOWN
         # Define speed adjustment trigger boxes
         self.trigger_boxes = [
-            {'location': carla.Location(x=-436.92488281, y=193.64867188, z=1.78496338), 'behavior': 'continue',
+            {'location': carla.Location(x=-887.13007812, y=952.45921875, z=2.56898071), 'behavior': 'stop',
              'target_speed': 30},
-            # Stop box
-            {'location': carla.Location(x=-462.91152344, y=117.94867188, z=1.79915588), 'behavior': 'stop',
+            {'location': carla.Location(x=-898.16976562, y=933.72132812, z=1.07269043), 'behavior': 'stop',
+             'target_speed': 30},
+            {'location': carla.Location(x=-765.17335938, y=1054.633125, z=1.07269043), 'behavior': 'stop',
+             'target_speed': 30},
+            {'location': carla.Location(x=-896.70046875, y=1091.6428125, z=2.40271484), 'behavior': 'continue',
              'target_speed': 0},
             # Slight slowdown
             # {'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
         ]
         # Define waypoints the car will follow
-        self.waypoints = self.define_manual_waypoints()
+        self.waypoints = self.define_manual_waypoints([])
         self.current_waypoint_index = 0
 
         ## Holds the current trigger which is active (continue/stop)
@@ -198,12 +203,13 @@ class MyVehicleProcess:
                 physics.drag_coefficient = 0.24
                 physics.gear_switch_time = 0
                 self.spawned_vehicle.apply_physics_control(physics)
-
+    ###RESPONSIBLE TOWARDS STEERING FOR THE WAYPOINTS
     def steer_to_waypoint(self):
         """
         Adjusts the vehicle's steering angle to follow the waypoints.
         """
         next_wp = self.get_next_waypoint()
+
         if next_wp:
             vehicle_transform = self.spawned_vehicle.get_transform()
             vehicle_location = vehicle_transform.location
@@ -216,48 +222,134 @@ class MyVehicleProcess:
 
             # Compute the steering angle error
             angle_diff = np.arctan2(np.cross(vehicle_vector, target_vector), np.dot(vehicle_vector, target_vector))
-            controller = PIDController(kp=0.2,ki=0.1,kd=0.6)
+            controller = PIDController(kp=0.2,ki=0.05,kd=0.8)
             steering_correction = controller.compute(angle_diff)
-
+            print(steering_correction)
             # Apply a scaling factor to avoid over-steering
-            if abs(steering_correction) < 0.1:
-                print(steering_correction)
+            if abs(steering_correction) < 0.07:
                 steering_correction = 0
             self._control.steer = (0.9 * self._control.steer) + (0.1 * steering_correction)
-                # Apply a **moving average** for smoother steering
-            #self._control.steer = (0.7 * self._control.steer) + (0.3 * steering_correction)
 
             # If close enough, move to next waypoint
-            if vehicle_location.distance(target_location) < 3:  # Adjust distance threshold if needed
+            if vehicle_location.distance(target_location) < 8:  # Adjust distance threshold if needed
+
                 self.current_waypoint_index += 1
                 print(f"🚗 Moving to waypoint {self.current_waypoint_index}")
 
+
+    ####GET THE NEXT WAYPOINT IN THE LIST
     def get_next_waypoint(self):
         """
         Gets the next waypoint in the list.
         """
+        print(self.current_waypoint_index)
         if self.current_waypoint_index >= len(self.waypoints):
             print("✅ Circuit Completed!")
             return None  # No more waypoints, the circuit is finished
 
         return self.waypoints[self.current_waypoint_index]
 
-    def define_manual_waypoints(self):
+
+    ####DEFINE THE TRAJECTORY OF THE CAR BASED ON THIS WAY POINTS
+    def define_manual_waypoints(self,listofwaypoints):
         """
         Manually define waypoints for the circuit.
         Each waypoint is a carla.Transform(location, rotation).
         """
         waypoints = [
-            carla.Transform(carla.Location(x=-430.32046875, y=201.92390625, z=0.56185181), carla.Rotation(yaw=0)),
-            carla.Transform(carla.Location(x=-437.50949219, y=189.75666016, z=0.59654037), carla.Rotation(yaw=0)),
-            carla.Transform(carla.Location(x=-446.52425781, y=184.30314453, z=0.5159288), carla.Rotation(yaw=0)),
-            carla.Transform(carla.Location(x=-450.80980469, y=167.03285156, z=0.72857117), carla.Rotation(yaw=0)),
-            carla.Transform(carla.Location(x=-458.60007812, y=144.63166992, z=0.61054489), carla.Rotation(yaw=0)),
-            carla.Transform(carla.Location(x=-461.21636719, y=131.04544922, z=0.60399445), carla.Rotation(yaw=0)),
-            carla.Transform(carla.Location(x=-461.56875, y=117.49168945, z=0.58686279), carla.Rotation(yaw=0)),
-            carla.Transform(carla.Location(x=-468.99507812, y=104.41443359, z=0.58396484), carla.Rotation(yaw=0)),
-            carla.Transform(carla.Location(x=-458.55988281, y=91.75417969, z=0.54032242), carla.Rotation(yaw=0)),
-            carla.Transform(carla.Location(x=-451.46929688, y=73.27376953, z=0.52080627), carla.Rotation(yaw=0)),
+            #1
+            carla.Transform(carla.Location(x=-740.3653125, y=849.02125, z=0.9646582), carla.Rotation(yaw=0)),
+            #2
+            carla.Transform(carla.Location(x=-753.180, y=851.8690625, z=0.9101441), carla.Rotation(yaw=0)),
+            #3
+            carla.Transform(carla.Location(x=-792.975625, y=851.1359375, z=1.12453003), carla.Rotation(yaw=0)),
+            #EXTRA
+            carla.Transform(carla.Location(x=-821.0871875, y=855.85335938, z=1.12453003), carla.Rotation(yaw=0)),
+            #4
+            carla.Transform(carla.Location(x=-841.46289062, y=866.3271875, z=1.04051208), carla.Rotation(yaw=0)),
+            #EXTRA2
+            carla.Transform(carla.Location(x=-85646.71875, y=875.51875, z=0.88121033), carla.Rotation(yaw=0)),
+            #5
+            carla.Transform(carla.Location(x=-874.86851562, y=893.87203125, z=0.8311377), carla.Rotation(yaw=0)),
+            #6
+            carla.Transform(carla.Location(x=-895.24453125, y=925.571875, z=1.15556656), carla.Rotation(yaw=0)),
+            #7
+            carla.Transform(carla.Location(x=-898.16976562, y=933.72132812, z=0.88121216), carla.Rotation(yaw=0)),
+            #8
+            carla.Transform(carla.Location(x=-900.09570312, y=948.02296875, z=1.07269043), carla.Rotation(yaw=0)),
+            #9
+            carla.Transform(carla.Location(x=-893.27351562, y=952.10445312, z=1.07269043), carla.Rotation(yaw=0)),
+            #10
+            carla.Transform(carla.Location(x=-879.30140625, y=959.43945312, z=1.07269043), carla.Rotation(yaw=0)),
+            #11
+            carla.Transform(carla.Location(x=-870.92757812, y=958.7728125, z=1.07269043), carla.Rotation(yaw=0)),
+            #12
+            carla.Transform(carla.Location(x=-853.49148438, y=968.01179688, z=1.07269043), carla.Rotation(yaw=0)),
+            #13
+            carla.Transform(carla.Location(x=-840.26007812, y=976.03375, z=1.07269043), carla.Rotation(yaw=0)),
+            #14
+            carla.Transform(carla.Location(x=-83236.492188, y=987.46539062, z=1.07269043), carla.Rotation(yaw=0)),
+            #15
+            carla.Transform(carla.Location(x=-810.69828125, y=1005.63429688, z=1.07269043), carla.Rotation(yaw=0)),
+            #16
+            carla.Transform(carla.Location(x=-794.353125, y=1021.02804688, z=1.07269043), carla.Rotation(yaw=0)),
+            #17
+            carla.Transform(carla.Location(x=-782.9775, y=1033.04640625, z=1.07269043), carla.Rotation(yaw=0)),
+            #18
+            carla.Transform(carla.Location(x=-765.17335938, y=1054.633125, z=1.07269043), carla.Rotation(yaw=0)),
+            #19
+            carla.Transform(carla.Location(x=-760.98710938, y=1065.8221875, z=1.03337128), carla.Rotation(yaw=0)),
+            #20
+            carla.Transform(carla.Location(x=-769.23109375, y=1080.855, z=1.07269043), carla.Rotation(yaw=0)),
+            #21
+            carla.Transform(carla.Location(x=-779.87953125, y=1093.32726562, z=0.88454239), carla.Rotation(yaw=0)),
+            #22
+            carla.Transform(carla.Location(x=-799.1690625, y=1105.34210938, z=0.88454239), carla.Rotation(yaw=0)),
+            #23
+            carla.Transform(carla.Location(x=-818.30148438, y=1110.29992188, z=0.88454239), carla.Rotation(yaw=0)),
+            #24
+            carla.Transform(carla.Location(x=-835.2134375, y=1110.11257812, z=0.88454239), carla.Rotation(yaw=0)),
+            #25
+            carla.Transform(carla.Location(x=-853.86882812, y=1105.5753125, z=0.88454239), carla.Rotation(yaw=0)),
+            #26
+            carla.Transform(carla.Location(x=-876.018125, y=1097.36875, z=0.88454239), carla.Rotation(yaw=0)),
+            #27
+            carla.Transform(carla.Location(x=-887.3715625, y=1093.17898438, z=0.88454239), carla.Rotation(yaw=0)),
+            #28
+            carla.Transform(carla.Location(x=-897.67242188, y=1089.75023438, z=0.88454239), carla.Rotation(yaw=0)),
+            #29
+            carla.Transform(carla.Location(x=-908.4121875, y=1089.42351562, z=0.88454239), carla.Rotation(yaw=0)),
+            #30
+            carla.Transform(carla.Location(x=-923.78414062, y=1082.15992188, z=0.88454239), carla.Rotation(yaw=0)),
+            #31
+            carla.Transform(carla.Location(x=-933.113125, y=1072.58515625, z=0.88454239), carla.Rotation(yaw=0)),
+            #32
+            carla.Transform(carla.Location(x=-958.07289062, y=1058.13546875, z=0.88454239), carla.Rotation(yaw=0)),
+            #33
+            carla.Transform(carla.Location(x=-971.63054688, y=1048.6884375, z=0.88454239), carla.Rotation(yaw=0)),
+            #34
+            carla.Transform(carla.Location(x=-997.74695312, y=1028.79898438, z=0.88454239), carla.Rotation(yaw=0)),
+            #35
+            carla.Transform(carla.Location(x=-1011.06375, y=1016.38453125, z=0.88454239), carla.Rotation(yaw=0)),
+            #36
+            carla.Transform(carla.Location(x=-1032.0240625, y=994.5825, z=0.88454239), carla.Rotation(yaw=0)),
+            #37
+            carla.Transform(carla.Location(x=-1050.44265625, y=974.54820312, z=0.88454239), carla.Rotation(yaw=0)),
+            #38
+            carla.Transform(carla.Location(x=-1052.33054688, y=966.25617188, z=0.88454239), carla.Rotation(yaw=0)),
+            #39
+            carla.Transform(carla.Location(x=-1035.27828125, y=951.8259375, z=0.88454239), carla.Rotation(yaw=0)),
+            #40
+            carla.Transform(carla.Location(x=-1025.32140625, y=943.2259375, z=0.88454239), carla.Rotation(yaw=0)),
+            #41
+            carla.Transform(carla.Location(x=-1008.61695312, y=932.18929688, z=0.88454239), carla.Rotation(yaw=0)),
+            #42
+            carla.Transform(carla.Location(x=-985.25328125, y=924.58429688, z=0.88454239), carla.Rotation(yaw=0)),
+            #43
+            carla.Transform(carla.Location(x=-959.47101562, y=923.2721875, z=0.88454239), carla.Rotation(yaw=0)),
+            #44
+            carla.Transform(carla.Location(x=-937.39351562, y=929.71445312, z=0.88454239), carla.Rotation(yaw=0)),
+
             # Add more waypoints as needed...
             # Add more waypoints as needed...
         ]
@@ -281,7 +373,12 @@ class MyVehicleProcess:
 
     def do(self):
         if self.settings.selected_input != 'None' and hasattr(self, 'spawned_vehicle'):
+
+            ###STEERING FUNCTION
             self.steer_to_waypoint()
+            ###STEERING FUNCTION
+
+
             # self._control.steer = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].steering_angle / math.radians(450)
 
             self._control.reverse = self.carlainterface_mp.shared_variables_hardware.inputs[
