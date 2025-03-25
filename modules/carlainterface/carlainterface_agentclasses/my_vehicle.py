@@ -150,17 +150,18 @@ class MyVehicleProcess:
             self._BP = random.choice(
                 self.carlainterface_mp.vehicle_blueprint_library.filter("vehicle." + self.settings.selected_car))
         self.world_map = self.carlainterface_mp.world.get_map()
-        self.trajectory_file_path = "modules/carlainterface/carlainterface_agentclasses/trajectory.csv"
+        self.trajectory_file_path = "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory1.csv"
 
         ####DEFINE TRIGGER BOXES TO STOP OR SLO DOWN
         # Define speed adjustment trigger boxes
         self.trigger_boxes = [
-            {'location': carla.Location(x=-895.44210938, y=928.09414062, z=1.05), 'behavior': 'stop'},
-            {'location': carla.Location(x=-891.55164062, y=952.82992188, z=1.05), 'behavior': 'stop'},
-            {'location': carla.Location(x=-772.78539062, y=1045.2003125, z=1.07269043), 'behavior': 'stop'},
-            {'location': carla.Location(x=-896.734375, y=1090.04140625, z=1.40271484), 'behavior': 'continue'},
-            {'location': carla.Location(x=-1052.10796875, y=974.54820312, z=1.40271484), 'behavior': 'continue'},
-            {'location': carla.Location(x=-740.3653125, y=849.02125, z=1.40271484), 'behavior': 'continue'},
+            {'location': carla.Location(x=14.18303711, y=-206.75150391, z=1.05), 'behavior': 'stop'},
+            {'location': carla.Location(x=313.97119141, y=-113.04113281, z=1.05), 'behavior': 'continue'},
+            {'location': carla.Location(x=346.77320312, y=-121.63306641, z=1.05), 'behavior': 'stop'},
+            {'location': carla.Location(x=352.06660156, y=-156.83760742, z=1.05), 'behavior': 'continue'},
+            {'location': carla.Location(x=331.06691406, y=-249.96021484, z=1.05), 'behavior': 'stop'},
+            {'location': carla.Location(x=291.45935547, y=-249.73994141, z=1.05), 'behavior': 'continue'},
+            {'location': carla.Location(x=290.91568359, y=-232.86884766, z=1.05), 'behavior': 'final'},
             # Slight slowdown
             # {'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
         ]
@@ -222,7 +223,6 @@ class MyVehicleProcess:
             angle_diff = np.arctan2(np.cross(vehicle_vector, target_vector), np.dot(vehicle_vector, target_vector))
             controller = PIDController(kp=0.2,ki=0.05,kd=0.8)
             steering_correction = controller.compute(angle_diff)
-            print(steering_correction)
             # Apply a scaling factor to avoid over-steering
             if abs(steering_correction) < 0.09:
                 steering_correction = 0
@@ -272,106 +272,6 @@ class MyVehicleProcess:
             print(f"✅ Loaded {len(waypoints)} waypoints from file.")
         except Exception as e:
             print(f"❌ Error loading waypoints: {e}")
-
-        return waypoints
-        zex = 1.00
-        # waypoints = [
-        #     #1
-        #     carla.Transform(carla.Location(x=-740.3653125, y=849.02125, z=zex), carla.Rotation(yaw=0)),
-        #     #2
-        #     carla.Transform(carla.Location(x=-753.180, y=851.8690625, z=zex), carla.Rotation(yaw=0)),
-        #     #3
-        #     carla.Transform(carla.Location(x=-792.975625, y=851.1359375, z=zex), carla.Rotation(yaw=0)),
-        #     #EXTRA
-        #     carla.Transform(carla.Location(x=-821.0871875, y=857.153125, z=zex), carla.Rotation(yaw=0)),
-        #     #4
-        #     carla.Transform(carla.Location(x=-841.46289062, y=866.3271875, z=zex), carla.Rotation(yaw=0)),
-        #     #EXTRA2
-        #     carla.Transform(carla.Location(x=-856.4671875, y=876.8890625, z=zex), carla.Rotation(yaw=0)),
-        #     #5
-        #     carla.Transform(carla.Location(x=-874.86851562, y=893.87203125, z=zex), carla.Rotation(yaw=0)),
-        #     #6
-        #     carla.Transform(carla.Location(x=-886.18265625, y=912.48320312, z=zex), carla.Rotation(yaw=0)),
-        #     #7
-        #     carla.Transform(carla.Location(x=-895.44210938, y=928.09414062, z=zex), carla.Rotation(yaw=0)),
-        #     #8
-        #     carla.Transform(carla.Location(x=-901.7221875, y=946.99828125, z=zex), carla.Rotation(yaw=0)),
-        #     # 9
-        #     carla.Transform(carla.Location(x=-891.55164062, y=952.82992188, z=zex), carla.Rotation(yaw=0)),
-        #     #10
-        #     carla.Transform(carla.Location(x=-880.02179688, y=958.87023438, z=zex), carla.Rotation(yaw=0)),
-        #     #11
-        #     carla.Transform(carla.Location(x=-870.92757812, y=958.7728125, z=zex), carla.Rotation(yaw=0)),
-        #     #12
-        #     carla.Transform(carla.Location(x=-853.49148438, y=968.01179688, z=zex), carla.Rotation(yaw=0)),
-        #     #13
-        #     carla.Transform(carla.Location(x=-840.26007812, y=976.03375, z=zex), carla.Rotation(yaw=0)),
-        #     #14
-        #     carla.Transform(carla.Location(x=-832.36492188, y=987.46539062, z=zex), carla.Rotation(yaw=0)),
-        #     #15
-        #     carla.Transform(carla.Location(x=-809.18648438, y=1005.63429688, z=zex), carla.Rotation(yaw=0)),
-        #     #16
-        #     carla.Transform(carla.Location(x=-794.353125, y=1019.45648438, z=zex), carla.Rotation(yaw=0)),
-        #     #17
-        #     carla.Transform(carla.Location(x=-782.9775, y=1031.84445312, z=zex), carla.Rotation(yaw=0)),
-        #     #18
-        #     carla.Transform(carla.Location(x=-772.78539062, y=1045.2003125, z=zex), carla.Rotation(yaw=0)),
-        #     #19
-        #     carla.Transform(carla.Location(x=-760.10273438, y=1062.45382812, z=zex), carla.Rotation(yaw=0)),
-        #     #20
-        #     carla.Transform(carla.Location(x=-768.754375, y=1081.24390625, z=zex), carla.Rotation(yaw=0)),
-        #     #21
-        #     carla.Transform(carla.Location(x=-779.87953125, y=1093.32726562, z=zex), carla.Rotation(yaw=0)),
-        #     #22
-        #     carla.Transform(carla.Location(x=-799.1690625, y=1106.18421875, z=zex), carla.Rotation(yaw=0)),
-        #     #23
-        #     carla.Transform(carla.Location(x=-818.30148438, y=1110.75765625, z=zex), carla.Rotation(yaw=0)),
-        #     #24
-        #     carla.Transform(carla.Location(x=-835.2134375, y=1110.11257812, z=zex), carla.Rotation(yaw=0)),
-        #     #25
-        #     carla.Transform(carla.Location(x=-853.86882812, y=1105.5753125, z=zex), carla.Rotation(yaw=0)),
-        #     #26
-        #     carla.Transform(carla.Location(x=-876.018125, y=1097.94226562, z=zex), carla.Rotation(yaw=0)),
-        #     #27
-        #     carla.Transform(carla.Location(x=-887.3715625, y=1093.17898438, z=zex), carla.Rotation(yaw=0)),
-        #     #28
-        #     carla.Transform(carla.Location(x=-896.734375, y=1090.04140625, z=zex), carla.Rotation(yaw=0)),
-        #     #29
-        #     carla.Transform(carla.Location(x=-908.4121875, y=1089.42351562, z=zex), carla.Rotation(yaw=0)),
-        #     #30
-        #     carla.Transform(carla.Location(x=-923.78414062, y=1082.15992188, z=zex), carla.Rotation(yaw=0)),
-        #     #31
-        #     carla.Transform(carla.Location(x=-933.113125, y=1072.58515625, z=zex), carla.Rotation(yaw=0)),
-        #     #32
-        #     carla.Transform(carla.Location(x=-958.07289062, y=1059.16015625, z=zex), carla.Rotation(yaw=0)),
-        #     #33
-        #     carla.Transform(carla.Location(x=-972.623125, y=1048.915625, z=zex), carla.Rotation(yaw=0)),
-        #     #34
-        #     carla.Transform(carla.Location(x=-997.74695312, y=1028.79898438, z=zex), carla.Rotation(yaw=0)),
-        #     #35
-        #     carla.Transform(carla.Location(x=-1012.2465625, y=1016.38453125, z=zex), carla.Rotation(yaw=0)),
-        #     #36
-        #     carla.Transform(carla.Location(x=-1033.08453125, y=994.5825, z=zex), carla.Rotation(yaw=0)),
-        #     #37
-        #     carla.Transform(carla.Location(x=-1052.10796875, y=974.54820312, z=zex), carla.Rotation(yaw=0)),
-        #     #38
-        #     carla.Transform(carla.Location(x=-1053.91039062, y=965.3409375, z=zex), carla.Rotation(yaw=0)),
-        #     #39
-        #     carla.Transform(carla.Location(x=-1035.27828125, y=950.82023438, z=zex), carla.Rotation(yaw=0)),
-        #     #40
-        #     carla.Transform(carla.Location(x=-1025.32140625, y=942.38132812, z=zex), carla.Rotation(yaw=0)),
-        #     #41
-        #     carla.Transform(carla.Location(x=-1008.61695312, y=930.986875, z=zex), carla.Rotation(yaw=0)),
-        #     #42
-        #     carla.Transform(carla.Location(x=-985.25328125, y=923.42078125, z=zex), carla.Rotation(yaw=0)),
-        #     #43
-        #     carla.Transform(carla.Location(x=-959.47101562, y=923.2721875, z=zex), carla.Rotation(yaw=0)),
-        #     #44
-        #     carla.Transform(carla.Location(x=-937.39351562, y=929.71445312, z=zex), carla.Rotation(yaw=0)),
-        #
-        #     # Add more waypoints as needed...
-        #     # Add more waypoints as needed...
-        # ]
         return waypoints
 
     def get_current_speed(self):
@@ -508,6 +408,8 @@ class MyVehicleProcess:
                         self.user_override_speed = max(10,
                                                        self.user_override_speed - 20)  # Prevent zero speed in movement areas
                         self.start_recovery_timer(5)
+                    if box['behavior'] == "final":
+                        self.user_override_speed = 0
                     break  # Exit loop once a trigger is found
 
         # Only reset trigger if the vehicle left the last trigger box
