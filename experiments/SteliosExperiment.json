@@ -1,0 +1,86 @@
+{
+    "modules_included": [
+        "Hardware Manager",
+        "Carla Interface",
+        "NPC Controller Manager"
+    ],
+    "base_settings": {
+        "Hardware Manager": {
+            "inputs": {
+                "Keyboard_1": {
+                  "auto_center": true,
+                  "brake_key": 83,
+                  "brake_sensitivity": 50,
+                  "handbrake_key": 32,
+                  "identifier": "Keyboard_1",
+                  "input_type": 0,
+                  "max_steer": 1.5708,
+                  "min_steer": -1.5708,
+                  "reverse_key": 82,
+                  "steer_left_key": 65,
+                  "steer_right_key": 68,
+                  "steer_sensitivity": 50,
+                  "throttle_key": 87,
+                  "throttle_sensitivity": 50
+            }
+            }
+        },
+        "Carla Interface": {
+            "agents": {
+                "My Vehicle_1": {
+                    "selected_input": "Keyboard_1",
+                    "selected_controller": "None",
+                    "selected_spawnpoint": "Spawnpoint 0",
+                    "selected_car": "hapticslab.audi",
+                    "velocity": 35,
+                    "set_velocity": true,
+                    "identifier": "My Vehicle_1",
+                    "agent_type": 2
+                }
+            },
+            "current_scenario": null
+        },
+        "NPC Controller Manager": {
+            "controllers": {}
+        }
+    },
+    "conditions": {
+        "Trial 1": {
+            "Carla Interface": {
+                "agents": {
+                    "My Vehicle_1": {
+                        "selected_spawnpoint": "Spawnpoint 0"
+                    }
+                },
+              "current_scenario": "Trial 1"
+            }
+        },
+        "Trial 2": {
+            "Carla Interface": {
+                "agents": {
+                    "My Vehicle_1": {
+                        "selected_spawnpoint": "Spawnpoint 1"
+
+                    }
+                },
+              "current_scenario": "Trial 2"
+            }
+        },
+        "Trial 3": {
+            "Carla Interface": {
+                "agents": {
+                    "My Vehicle_1": {
+                        "selected_spawnpoint": "Spawnpoint 2"
+
+                    }
+                },
+              "current_scenario": "Trial 3"
+            }
+        }
+    },
+    "active_condition_sequence": [
+        "Trial 1",
+        "Trial 2",
+        "Trial 3"
+    ]
+}

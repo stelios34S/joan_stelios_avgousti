@@ -12,7 +12,6 @@ class ExamplePrintScenario(Scenario):
     """
     def __init__(self):
         super().__init__()
-
         self.keyboard_message_sent = False
 
     def do_function(self, carla_interface_process: CarlaInterfaceProcess):

@@ -155,18 +155,18 @@ class MyVehicleProcess:
         ####DEFINE TRIGGER BOXES TO STOP OR SLO DOWN
         # Define speed adjustment trigger boxes
         self.trigger_boxes = [
-            {'location': carla.Location(x=14.18303711, y=-206.75150391, z=1.05), 'behavior': 'stop'},
-            {'location': carla.Location(x=313.97119141, y=-113.04113281, z=1.05), 'behavior': 'continue'},
-            {'location': carla.Location(x=346.77320312, y=-121.63306641, z=1.05), 'behavior': 'stop'},
-            {'location': carla.Location(x=352.06660156, y=-156.83760742, z=1.05), 'behavior': 'continue'},
-            {'location': carla.Location(x=331.06691406, y=-249.96021484, z=1.05), 'behavior': 'stop'},
-            {'location': carla.Location(x=291.45935547, y=-249.73994141, z=1.05), 'behavior': 'continue'},
-            {'location': carla.Location(x=290.91568359, y=-232.86884766, z=1.05), 'behavior': 'final'},
-            # Slight slowdown
-            # {'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
+           {'location': carla.Location(x=14.18303711, y=-206.75150391, z=1.05), 'behavior': 'stop'},
+           {'location': carla.Location(x=313.97119141, y=-113.04113281, z=1.05), 'behavior': 'continue'},
+           {'location': carla.Location(x=346.77320312, y=-121.63306641, z=1.05), 'behavior': 'stop'},
+           {'location': carla.Location(x=352.06660156, y=-156.83760742, z=1.05), 'behavior': 'continue'},
+           {'location': carla.Location(x=331.06691406, y=-249.96021484, z=1.05), 'behavior': 'stop'},
+           {'location': carla.Location(x=291.45935547, y=-249.73994141, z=1.05), 'behavior': 'continue'},
+           {'location': carla.Location(x=290.91568359, y=-232.86884766, z=1.05), 'behavior': 'final'},
+           # Slight slowdown
+           # {'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
         ]
         # Define waypoints the car will follow
-        self.waypoints = self.define_manual_waypoints(self.trajectory_file_path)
+        #self.waypoints = self.define_manual_waypoints(self.trajectory_file_path)
         self.current_waypoint_index = 0
 
         ## Holds the current trigger which is active (continue/stop)
@@ -203,12 +203,13 @@ class MyVehicleProcess:
                 physics.gear_switch_time = 0
                 self.spawned_vehicle.apply_physics_control(physics)
     ###RESPONSIBLE TOWARDS STEERING FOR THE WAYPOINTS
-    def steer_to_waypoint(self):
+    def steer_to_waypoint(self,waypoints):
         """
         Adjusts the vehicle's steering angle to follow the waypoints.
         """
-        next_wp = self.get_next_waypoint()
 
+        next_wp_location, next_wp_rotation = self.get_next_waypoint(waypoints)
+        next_wp = carla.Transform(next_wp_location, next_wp_rotation)
         if next_wp:
             vehicle_transform = self.spawned_vehicle.get_transform()
             vehicle_location = vehicle_transform.location
@@ -232,20 +233,20 @@ class MyVehicleProcess:
             if vehicle_location.distance(target_location) < 5:  # Adjust distance threshold if needed
 
                 self.current_waypoint_index += 1
-                print(f"🚗 Moving to waypoint {self.current_waypoint_index}")
+                print(f"Moving to waypoint {self.current_waypoint_index}")
 
 
     ####GET THE NEXT WAYPOINT IN THE LIST
-    def get_next_waypoint(self):
+    def get_next_waypoint(self,waypoints):
         """
         Gets the next waypoint in the list.
         """
         print(self.current_waypoint_index)
-        if self.current_waypoint_index >= len(self.waypoints):
+        if self.current_waypoint_index >= len(waypoints):
             print("✅ Circuit Completed!")
             return None  # No more waypoints, the circuit is finished
 
-        return self.waypoints[self.current_waypoint_index]
+        return waypoints[self.current_waypoint_index]
 
 
     ####DEFINE THE TRAJECTORY OF THE CAR BASED ON THIS WAY POINTS
@@ -293,8 +294,8 @@ class MyVehicleProcess:
     def do(self):
         if self.settings.selected_input != 'None' and hasattr(self, 'spawned_vehicle'):
 
-            ###STEERING FUNCTION
-            self.steer_to_waypoint()
+            ###STEERING FUNCTION now invoked from scenario
+            #self.steer_to_waypoint()
             ###STEERING FUNCTION
 
 
@@ -331,8 +332,8 @@ class MyVehicleProcess:
                     self.settings.selected_input].throttle
 
             ##################ADJUST SPEED ON LOCATION################################
-            vehicle_location = self.spawned_vehicle.get_transform().location
-            trigger_behaviour = self.adjust_speed(vehicle_location=vehicle_location)
+            # vehicle_location = self.spawned_vehicle.get_transform().location
+            # trigger_behaviour = self.adjust_speed(vehicle_location=vehicle_location)
 
 
             ##################### INFORM BUTTON (I key)(TAP) ############################
@@ -386,13 +387,13 @@ class MyVehicleProcess:
         """Gradually restores the car to its normal speed after interventions."""
         self.user_override_speed = self.settings.velocity  # Restore standard velocity
 
-    def adjust_speed(self, vehicle_location):
+    def adjust_speed(self, vehicle_location,trigger_boxes):
         """
         Adjusts vehicle speed based on predefined trigger boxes.
         """
         new_trigger = None  # Default to None
 
-        for box in self.trigger_boxes:
+        for box in trigger_boxes:
             if vehicle_location.distance(box['location']) < 4:  # Inside trigger box
                 new_trigger = box['behavior']
                 if self.trigger_active != new_trigger:
@@ -419,25 +420,6 @@ class MyVehicleProcess:
         self.trigger_active = new_trigger  # Store active trigger behavior
         return new_trigger
 
-    # def set_target_speed(self, target_speed):
-    #     """
-    #     Adjusts the vehicle's speed gradually.
-    #     """
-    #     current_speed = math.sqrt(
-    #         self.spawned_vehicle.get_velocity().x ** 2 +
-    #         self.spawned_vehicle.get_velocity().y ** 2 +
-    #         self.spawned_vehicle.get_velocity().z ** 2
-    #     ) * 3.6  # Convert to km/h
-    #
-    #     speed_error = target_speed - current_speed
-    #
-    #     # Smooth throttle/brake transition
-    #     if speed_error > 0:
-    #         self._control.throttle = min(1.0, (speed_error * 0.05))  # Accelerate
-    #         self._control.brake = 0
-    #     else:
-    #         self._control.brake = min(1.0, (-speed_error * 0.05))  # Decelerate
-    #         self._control.throttle = 0
 
     def display_hud_message(self, message, duration=2):
         if hasattr(self, 'spawned_vehicle'):
