@@ -101,7 +101,7 @@ class DataRecorderProcess(ModuleProcess):
             self.travelled_distance += travelled_distance_tick
 
             if self.travelled_distance > 0.0:
-                self.index += 1
+                self.index += 1                                                         #yaw                #pitch          #roll
                 trajectory_row = [self.index, self.transform[0], self.transform[1], applied_inputs[0], applied_inputs[4], applied_inputs[3], self.transform[3],
                                   math.sqrt(velocities[0] ** 2 + velocities[1] ** 2 + velocities[2] ** 2)]
 

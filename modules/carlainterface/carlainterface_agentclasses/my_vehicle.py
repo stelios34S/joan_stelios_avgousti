@@ -166,6 +166,7 @@ class MyVehicleProcess:
         self.trigger_active = None
         ## Here to allow us to mess wit hthe speed while in cruise control
         self.user_override_speed = self.settings.velocity
+        self.reset_speed = 0
         ###Resets the speed to cruise control after trigger box
         self.recovery_timer = None  # Store a reference to the timer
 
@@ -242,14 +243,14 @@ class MyVehicleProcess:
             print("✅ Circuit Completed!")
 
             return None  # No more waypoints, the circuit is finished
-        print(self.current_waypoint_index)
         return waypoints[self.current_waypoint_index]
     def load_trigger_boxes(self,scenario_identifier):
         if scenario_identifier == "trial_1":
             triggerlist =[
-            {'location': carla.Location(x=313.97119141, y=-113.04113281, z=1.05), 'behavior': 'continue'},
-            {'location': carla.Location(x=346.77320312, y=-121.63306641, z=1.05), 'behavior': 'stop'},
-            {'location': carla.Location(x=290.91568359, y=-232.86884766, z=1.05), 'behavior': 'final'}]
+            {'location': carla.Location(x=13.54255127, y=-217.76855469, z=1.05), 'behavior': 'stop'},
+            {'location': carla.Location(x=352.75347656, y=-192.88890625, z=1.05), 'behavior': 'continue'},
+            {'location': carla.Location(x=341.73339844, y=-118.74054688, z=1.05), 'behavior': 'stop'},
+            {'location': carla.Location(x=297.74673828, y=-223.13464844, z=1.05), 'behavior': 'final'}]
             return triggerlist
         if scenario_identifier == "trial_2":
             return []
@@ -317,24 +318,28 @@ class MyVehicleProcess:
                 self.settings.selected_input].brake
 
             if self.settings.set_velocity:
-                vel_error = self.user_override_speed - self.get_current_speed()
-                vel_error_rate = (math.sqrt(
-                    self.spawned_vehicle.get_acceleration().x ** 2 +
-                    self.spawned_vehicle.get_acceleration().y ** 2 +
-                    self.spawned_vehicle.get_acceleration().z ** 2) * 3.6)
-                error_velocity = [vel_error, vel_error_rate]
+                if self.flag and self.trigger_active != "final":
+                    current_waypoint = self.waypoints[self.current_waypoint_index]
+                    self.user_override_speed = current_waypoint['speed']  # Target speed from waypoint
+                    self.reset_speed = current_waypoint['speed']*3.6
+                    vel_error = self.user_override_speed*3.6 - self.get_current_speed()
+                    vel_error_rate = (math.sqrt(
+                        self.spawned_vehicle.get_acceleration().x ** 2 +
+                        self.spawned_vehicle.get_acceleration().y ** 2 +
+                        self.spawned_vehicle.get_acceleration().z ** 2) * 3.6)
+                    error_velocity = [vel_error, vel_error_rate]
 
-                pd_vel_output = self.velocity_PD_controller(error_velocity)
-                if pd_vel_output < 0:
-                    self._control.brake = -pd_vel_output
-                    self._control.throttle = 0
-                    if pd_vel_output < -1:
-                        self._control.brake = 1
-                elif pd_vel_output > 0:
-                    if self._control.brake == 0:
-                        self._control.throttle = pd_vel_output
-                    else:
+                    pd_vel_output = self.velocity_PD_controller(error_velocity)
+                    if pd_vel_output < 0:
+                        self._control.brake = -pd_vel_output
                         self._control.throttle = 0
+                        if pd_vel_output < -1:
+                            self._control.brake = 1
+                    elif pd_vel_output > 0:
+                        if self._control.brake == 0:
+                            self._control.throttle = pd_vel_output
+                        else:
+                            self._control.throttle = 0
             else:
                 self._control.throttle = self.carlainterface_mp.shared_variables_hardware.inputs[
                     self.settings.selected_input].throttle
@@ -350,6 +355,7 @@ class MyVehicleProcess:
 
             ##################### INFORM BUTTON (I key)(TAP) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].inform:
+                print("KATI KATI")
                 if self.trigger_active == "stop":  # If the box wants a stop, brake harder
                     self._control.brake = 1.0  # Max braking force
                     self._control.throttle = 0
@@ -358,14 +364,14 @@ class MyVehicleProcess:
                     self.user_override_speed = max(15, self.user_override_speed - 10)  # Temporary slowdown
                 else:
                     self.user_override_speed = max(25, self.user_override_speed - 10)
-                self.start_recovery_timer(5)
+                self.start_recovery_timer(10)
 
 
             ##################### INTERVENE BUTTON (J key) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].intervene:
                 if self.trigger_active == "stop":
                     # Car originally planned to stop -> Override and keep moving
-                    self.user_override_speed = max(15, self.settings.velocity * 0.5)
+                    self.user_override_speed = max(15, self.reset_speed.velocity * 0.5)
                 elif self.trigger_active == "continue":
                     # Reduce speed to zero, then recover after 5 seconds
                     self.user_override_speed = 0
@@ -374,7 +380,7 @@ class MyVehicleProcess:
                     self.user_override_speed = 0
                     self._control.brake = 1
                 # Set recovery timer (after 5 sec, return to normal speed)
-                self.start_recovery_timer(5)
+                self.start_recovery_timer(10)
 
 
 
@@ -397,7 +403,7 @@ class MyVehicleProcess:
 
     def reset_to_standard_speed(self):
         """Gradually restores the car to its normal speed after interventions."""
-        self.user_override_speed = self.settings.velocity  # Restore standard velocity
+        self.user_override_speed = self.reset_speed  # Restore standard velocity
 
 
     def adjust_speed_trigger(self, vehicle_location):
@@ -409,22 +415,21 @@ class MyVehicleProcess:
         for box in self.trigger_boxes:
             if vehicle_location.distance(box['location']) < 4:  # Inside trigger box
                 new_trigger = box['behavior']
-                if self.trigger_active != new_trigger:
-                    #self.display_hud_message(f"Trigger: {box['behavior'].capitalize()}")
-
-                    if box['behavior'] == "stop":
-                        self._control.brake = 0.5  # medium braking force
-                        self._control.throttle = 0
-                        self.user_override_speed = 0
-                        self.start_recovery_timer(7)
-
-                    if box['behavior'] == "continue":
-                        self.user_override_speed = max(10,
-                                                       self.user_override_speed - 20)  # Prevent zero speed in movement areas
-                        self.start_recovery_timer(5)
-                    if box['behavior'] == "final":
-                        self.user_override_speed = 0
-                    break  # Exit loop once a trigger is found
+                if new_trigger == "final":
+                    self.carlainterface_mp.pipe_comm.send({"stop_all_modules": True})
+                break  # Exit loop once a trigger is found
+        # if box['behavior'] == "stop":
+        #     self._control.brake = 0.5  # medium braking force
+        #     self._control.throttle = 0
+        #     self.user_override_speed = 0
+        #     self.start_recovery_timer(7)
+        #
+        # if box['behavior'] == "continue":
+        #     self.user_override_speed = max(10,
+        #                                    self.user_override_speed - 20)  # Prevent zero speed in movement areas
+        #     self.start_recovery_timer(5)
+        # if box['behavior'] == "final":
+        #     self.user_override_speed = 0
 
         # Only reset trigger if the vehicle left the last trigger box
         if self.trigger_active and new_trigger is None:
