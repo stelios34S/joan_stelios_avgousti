@@ -10,10 +10,9 @@ class ScenarioTrial1(Scenario):
         # Load waypoints and trigger boxes for this trial
 
         ####MAYBE SEND THIS THROUGH TO THE FUNCTION OF THE VEHICLE
-        self.waypoints = self.define_manual_waypoints(
-            "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory1.csv")  # Load predefined waypoints
-        self.trigger_boxes = self.load_trigger_boxes()  # Load predefined trigger boxes
-
+        self.identifier = "trial_1"
+        self.trajectory_path = "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory1.csv"  # Load predefined waypoints
+        self.scenario_loaded = False
     @property
     def name(self):
         return "Trial 1"
@@ -23,72 +22,6 @@ class ScenarioTrial1(Scenario):
         This function checks the vehicle's position and triggers actions
         based on its interaction with waypoints and trigger boxes.
         """
-        # Get the current location of the vehicle
-        vehicle_location = carla_interface_process.agent_objects['My Vehicle_1'].shared_variables.transform.location
-
-        # Check if the vehicle has reached a waypoint and update the control accordingly
-        self.steer_to_waypoint(carla_interface_process, vehicle_location)
-
-        # Check if the vehicle is inside any trigger box and handle the behavior
-        boxtrigg = self.adjust_speed(carla_interface_process, vehicle_location)
-
-        # ---------------------------------------------------
-        # Destruction Phase: If the vehicle travels beyond destroy_distance.
-        # ---------------------------------------------------
-        if boxtrigg=="final":
-            carla_interface_process.pipe_comm.send({"stop_all_modules": True})
-
-        ####DEFINE THE TRAJECTORY OF THE CAR BASED ON THIS WAY POINTS
-
-    def define_manual_waypoints(self, trajectory_path):
-        """
-        Manually define waypoints for the circuit.
-        Each waypoint is a carla.Transform(location, rotation).
-        """
-        waypoints = []
-        try:
-
-            # Load the CSV file
-            df = pd.read_csv(trajectory_path, header=None)
-            # Convert each row into a CARLA waypoint
-            for _, row in df.iterrows():
-                location = carla.Location(x=row[1], y=row[2], z=row[3])
-                rotation = carla.Rotation(yaw=row[4])  # Assuming 'heading' represents yaw
-                waypoints.append((location, rotation))  # Store as tuple of location and rotation
-
-            print(f"Loaded {len(waypoints)} waypoints from file.")
-        except Exception as e:
-            print(f"Error loading waypoints: {e}")
-        return waypoints
-
-    def load_trigger_boxes(self):
-        """
-        Load trigger boxes for Trial 1.
-        """
-        return  [
-            {'location': carla.Location(x=14.18303711, y=-206.75150391, z=1.05), 'behavior': 'stop'},
-            {'location': carla.Location(x=313.97119141, y=-113.04113281, z=1.05), 'behavior': 'continue'},
-            {'location': carla.Location(x=346.77320312, y=-121.63306641, z=1.05), 'behavior': 'stop'},
-            {'location': carla.Location(x=352.06660156, y=-156.83760742, z=1.05), 'behavior': 'continue'},
-            {'location': carla.Location(x=331.06691406, y=-249.96021484, z=1.05), 'behavior': 'stop'},
-            {'location': carla.Location(x=291.45935547, y=-249.73994141, z=1.05), 'behavior': 'continue'},
-            {'location': carla.Location(x=290.91568359, y=-232.86884766, z=1.05), 'behavior': 'final'},
-            # Slight slowdown
-            # {'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
-        ]
-
-    def steer_to_waypoint(self, carla_interface_process, vehicle_location):
-        """
-        Calls the vehicle's method to steer to the next waypoint.
-        """
-        print("KATI TIS PAREA")
-        my_vehicle = carla_interface_process.agent_objects['My Vehicle_1']  # Access vehicle object
-        my_vehicle.steer_to_waypoint(self.waypoints)  # Delegate the steering logic to the vehicle class
-
-    def adjust_speed(self, carla_interface_process, vehicle_location):
-        """
-        Calls the vehicle's method to adjust speed based on trigger box behavior.
-        """
-        my_vehicle = carla_interface_process.agent_objects['My Vehicle_1']  # Access vehicle object
-        boxtrigg = my_vehicle.adjust_speed(vehicle_location,self.trigger_boxes)  # Delegate the speed adjustment to the vehicle class
-        return boxtrigg
+        if not self.scenario_loaded:
+            carla_interface_process.agent_objects['My Vehicle_1'].load_scenario_data(self.identifier, self.trajectory_path)
+            self.scenario_loaded = True
