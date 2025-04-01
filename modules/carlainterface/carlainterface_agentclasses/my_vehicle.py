@@ -155,20 +155,13 @@ class MyVehicleProcess:
         ####DEFINE TRIGGER BOXES TO STOP OR SLO DOWN
         # Define speed adjustment trigger boxes
         self.trigger_boxes = [
-           {'location': carla.Location(x=14.18303711, y=-206.75150391, z=1.05), 'behavior': 'stop'},
-           {'location': carla.Location(x=313.97119141, y=-113.04113281, z=1.05), 'behavior': 'continue'},
-           {'location': carla.Location(x=346.77320312, y=-121.63306641, z=1.05), 'behavior': 'stop'},
-           {'location': carla.Location(x=352.06660156, y=-156.83760742, z=1.05), 'behavior': 'continue'},
-           {'location': carla.Location(x=331.06691406, y=-249.96021484, z=1.05), 'behavior': 'stop'},
-           {'location': carla.Location(x=291.45935547, y=-249.73994141, z=1.05), 'behavior': 'continue'},
-           {'location': carla.Location(x=290.91568359, y=-232.86884766, z=1.05), 'behavior': 'final'},
-           # Slight slowdown
-           # {'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
+
         ]
         # Define waypoints the car will follow
         #self.waypoints = self.define_manual_waypoints(self.trajectory_file_path)
         self.current_waypoint_index = 0
-
+        self.waypoints = []
+        self.flag = False
         ## Holds the current trigger which is active (continue/stop)
         self.trigger_active = None
         ## Here to allow us to mess wit hthe speed while in cruise control
@@ -203,19 +196,18 @@ class MyVehicleProcess:
                 physics.gear_switch_time = 0
                 self.spawned_vehicle.apply_physics_control(physics)
     ###RESPONSIBLE TOWARDS STEERING FOR THE WAYPOINTS
-    def steer_to_waypoint(self,waypoints):
+    def steer_to_waypoint(self):
         """
         Adjusts the vehicle's steering angle to follow the waypoints.
         """
 
-        next_wp_location, next_wp_rotation = self.get_next_waypoint(waypoints)
-        next_wp = carla.Transform(next_wp_location, next_wp_rotation)
+        next_wp = self.get_next_waypoint(self.waypoints)
         if next_wp:
             vehicle_transform = self.spawned_vehicle.get_transform()
             vehicle_location = vehicle_transform.location
             vehicle_rotation = vehicle_transform.rotation.yaw  # Vehicle heading
 
-            target_location = next_wp.location
+            target_location = next_wp['transform'].location
             target_vector = np.array([target_location.x - vehicle_location.x, target_location.y - vehicle_location.y])
             vehicle_vector = np.array(
                 [math.cos(math.radians(vehicle_rotation)), math.sin(math.radians(vehicle_rotation))])
@@ -235,19 +227,36 @@ class MyVehicleProcess:
                 self.current_waypoint_index += 1
                 print(f"Moving to waypoint {self.current_waypoint_index}")
 
+    def load_scenario_data(self,scenario_identifier,trajectory_path):
+            if scenario_identifier == "trial_1":
+                self.waypoints = self.define_manual_waypoints(trajectory_path)
+                self.trigger_boxes = self.load_trigger_boxes(scenario_identifier)
+                self.flag = True
 
     ####GET THE NEXT WAYPOINT IN THE LIST
     def get_next_waypoint(self,waypoints):
         """
         Gets the next waypoint in the list.
         """
-        print(self.current_waypoint_index)
         if self.current_waypoint_index >= len(waypoints):
             print("✅ Circuit Completed!")
+
             return None  # No more waypoints, the circuit is finished
-
+        print(self.current_waypoint_index)
         return waypoints[self.current_waypoint_index]
-
+    def load_trigger_boxes(self,scenario_identifier):
+        if scenario_identifier == "trial_1":
+            triggerlist =[
+            {'location': carla.Location(x=313.97119141, y=-113.04113281, z=1.05), 'behavior': 'continue'},
+            {'location': carla.Location(x=346.77320312, y=-121.63306641, z=1.05), 'behavior': 'stop'},
+            {'location': carla.Location(x=290.91568359, y=-232.86884766, z=1.05), 'behavior': 'final'}]
+            return triggerlist
+        if scenario_identifier == "trial_2":
+            return []
+        if scenario_identifier== "trial_3":
+            return []
+        # Slight slowdown
+        # {'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
 
     ####DEFINE THE TRAJECTORY OF THE CAR BASED ON THIS WAY POINTS
     def define_manual_waypoints(self,trajectory_path):
@@ -260,15 +269,14 @@ class MyVehicleProcess:
 
             # Load the CSV file
             df = pd.read_csv(trajectory_path,header=None)
-            print(df)
             # Convert each row into a CARLA waypoint
             for _, row in df.iterrows():
-                print(row)
                 transform = carla.Transform(
                     carla.Location(x=row[1], y=row[2], z=row[3]),
                     carla.Rotation(yaw=row[4])  # Assuming 'heading' represents yaw
                 )
-                waypoints.append(transform)
+                speed = row[7]  # Speed is stored in column 8 (index 7)
+                waypoints.append({'transform':transform, 'speed':speed})
 
             print(f"✅ Loaded {len(waypoints)} waypoints from file.")
         except Exception as e:
@@ -295,7 +303,7 @@ class MyVehicleProcess:
         if self.settings.selected_input != 'None' and hasattr(self, 'spawned_vehicle'):
 
             ###STEERING FUNCTION now invoked from scenario
-            #self.steer_to_waypoint()
+            self.steer_to_waypoint()
             ###STEERING FUNCTION
 
 
@@ -332,9 +340,13 @@ class MyVehicleProcess:
                     self.settings.selected_input].throttle
 
             ##################ADJUST SPEED ON LOCATION################################
-            # vehicle_location = self.spawned_vehicle.get_transform().location
-            # trigger_behaviour = self.adjust_speed(vehicle_location=vehicle_location)
-
+            vehicle_location = self.spawned_vehicle.get_transform().location
+            trigger_behaviour = self.adjust_speed_trigger(vehicle_location=vehicle_location)
+            # if self.flag:
+            #     current_waypoint = self.waypoints[self.current_waypoint_index]
+            #     if current_waypoint:
+            #         target_speed = current_waypoint['speed']  # Get the target speed from the waypoint data
+            #         self.adjust_speed(target_speed)  # Adjust speed to match trajectory
 
             ##################### INFORM BUTTON (I key)(TAP) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].inform:
@@ -387,13 +399,14 @@ class MyVehicleProcess:
         """Gradually restores the car to its normal speed after interventions."""
         self.user_override_speed = self.settings.velocity  # Restore standard velocity
 
-    def adjust_speed(self, vehicle_location,trigger_boxes):
+
+    def adjust_speed_trigger(self, vehicle_location):
         """
         Adjusts vehicle speed based on predefined trigger boxes.
         """
         new_trigger = None  # Default to None
 
-        for box in trigger_boxes:
+        for box in self.trigger_boxes:
             if vehicle_location.distance(box['location']) < 4:  # Inside trigger box
                 new_trigger = box['behavior']
                 if self.trigger_active != new_trigger:
