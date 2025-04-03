@@ -161,6 +161,7 @@ class MyVehicleProcess:
         #self.waypoints = self.define_manual_waypoints(self.trajectory_file_path)
         self.current_waypoint_index = 0
         self.waypoints = []
+        self.is_in_override_mode = False
         self.flag = False
         ## Holds the current trigger which is active (continue/stop)
         self.trigger_active = None
@@ -226,7 +227,7 @@ class MyVehicleProcess:
             if vehicle_location.distance(target_location) < 5:  # Adjust distance threshold if needed
 
                 self.current_waypoint_index += 1
-                print(f"Moving to waypoint {self.current_waypoint_index}")
+                #print(f"Moving to waypoint {self.current_waypoint_index}")
 
     def load_scenario_data(self,scenario_identifier,trajectory_path):
             if scenario_identifier == "trial_1":
@@ -247,7 +248,7 @@ class MyVehicleProcess:
     def load_trigger_boxes(self,scenario_identifier):
         if scenario_identifier == "trial_1":
             triggerlist =[
-            {'location': carla.Location(x=13.54255127, y=-217.76855469, z=1.05), 'behavior': 'stop'},
+            {'location': carla.Location(x=13.54254761, y=-219.77351562, z=1.05), 'behavior': 'continue'},
             {'location': carla.Location(x=352.75347656, y=-192.88890625, z=1.05), 'behavior': 'continue'},
             {'location': carla.Location(x=341.73339844, y=-118.74054688, z=1.05), 'behavior': 'stop'},
             {'location': carla.Location(x=297.74673828, y=-223.13464844, z=1.05), 'behavior': 'final'}]
@@ -320,9 +321,12 @@ class MyVehicleProcess:
             if self.settings.set_velocity:
                 if self.flag and self.trigger_active != "final":
                     current_waypoint = self.waypoints[self.current_waypoint_index]
-                    self.user_override_speed = current_waypoint['speed']  # Target speed from waypoint
+                    if not self.is_in_override_mode:
+                        self.user_override_speed = current_waypoint['speed']  # Target speed from waypoint
+                        vel_error = self.user_override_speed*3.6 - self.get_current_speed()
+                    else:
+                        vel_error = self.user_override_speed  - self.get_current_speed()
                     self.reset_speed = current_waypoint['speed']*3.6
-                    vel_error = self.user_override_speed*3.6 - self.get_current_speed()
                     vel_error_rate = (math.sqrt(
                         self.spawned_vehicle.get_acceleration().x ** 2 +
                         self.spawned_vehicle.get_acceleration().y ** 2 +
@@ -355,23 +359,27 @@ class MyVehicleProcess:
 
             ##################### INFORM BUTTON (I key)(TAP) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].inform:
-                print("KATI KATI")
+                #print("KATI KATI")
+                self.is_in_override_mode = True
                 if self.trigger_active == "stop":  # If the box wants a stop, brake harder
                     self._control.brake = 1.0  # Max braking force
                     self._control.throttle = 0
                     self.user_override_speed = 0
                 elif self.trigger_active == "continue":
-                    self.user_override_speed = max(15, self.user_override_speed - 10)  # Temporary slowdown
+                    self.user_override_speed = max(15, self.reset_speed - 10)  # Temporary slowdown
                 else:
-                    self.user_override_speed = max(25, self.user_override_speed - 10)
-                self.start_recovery_timer(10)
+                    self.user_override_speed = max(25, self.reset_speed - 15)
+                self.start_recovery_timer(7)
 
 
             ##################### INTERVENE BUTTON (J key) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].intervene:
+
+                self.is_in_override_mode = True
                 if self.trigger_active == "stop":
+                    #TODO: ONLY FLIMSY PART######
                     # Car originally planned to stop -> Override and keep moving
-                    self.user_override_speed = max(15, self.reset_speed.velocity * 0.5)
+                    self.user_override_speed = max(15, self.reset_speed)
                 elif self.trigger_active == "continue":
                     # Reduce speed to zero, then recover after 5 seconds
                     self.user_override_speed = 0
@@ -380,7 +388,7 @@ class MyVehicleProcess:
                     self.user_override_speed = 0
                     self._control.brake = 1
                 # Set recovery timer (after 5 sec, return to normal speed)
-                self.start_recovery_timer(10)
+                self.start_recovery_timer(7)
 
 
 
@@ -404,6 +412,7 @@ class MyVehicleProcess:
     def reset_to_standard_speed(self):
         """Gradually restores the car to its normal speed after interventions."""
         self.user_override_speed = self.reset_speed  # Restore standard velocity
+        self.is_in_override_mode = False
 
 
     def adjust_speed_trigger(self, vehicle_location):
