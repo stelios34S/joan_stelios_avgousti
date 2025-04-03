@@ -162,6 +162,7 @@ class MyVehicleProcess:
         self.current_waypoint_index = 0
         self.waypoints = []
         self.is_in_override_mode = False
+        self.scenario_identifier = None
         self.flag = False
         ## Holds the current trigger which is active (continue/stop)
         self.trigger_active = None
@@ -247,15 +248,17 @@ class MyVehicleProcess:
         return waypoints[self.current_waypoint_index]
     def load_trigger_boxes(self,scenario_identifier):
         if scenario_identifier == "trial_1":
+            self.scenario_identifier = scenario_identifier
             triggerlist =[
-            {'location': carla.Location(x=13.54254761, y=-219.77351562, z=1.05), 'behavior': 'continue'},
-            {'location': carla.Location(x=352.75347656, y=-192.88890625, z=1.05), 'behavior': 'continue'},
-            {'location': carla.Location(x=341.73339844, y=-118.74054688, z=1.05), 'behavior': 'stop'},
+            {'location': carla.Location(x=346.14488281, y=-125.2934082, z=1.05), 'behavior': 'continue'},
+            {'location': carla.Location(x=350.22765625, y=-193.40121094, z=1.05), 'behavior': 'stop'},
             {'location': carla.Location(x=297.74673828, y=-223.13464844, z=1.05), 'behavior': 'final'}]
             return triggerlist
         if scenario_identifier == "trial_2":
+            self.scenario_identifier = scenario_identifier
             return []
         if scenario_identifier== "trial_3":
+            self.scenario_identifier = scenario_identifier
             return []
         # Slight slowdown
         # {'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
@@ -358,7 +361,7 @@ class MyVehicleProcess:
             #         self.adjust_speed(target_speed)  # Adjust speed to match trajectory
 
             ##################### INFORM BUTTON (I key)(TAP) ############################
-            if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].inform:
+            if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].inform and self.scenario_identifier != "trial_1":
                 #print("KATI KATI")
                 self.is_in_override_mode = True
                 if self.trigger_active == "stop":  # If the box wants a stop, brake harder
@@ -366,14 +369,14 @@ class MyVehicleProcess:
                     self._control.throttle = 0
                     self.user_override_speed = 0
                 elif self.trigger_active == "continue":
-                    self.user_override_speed = max(15, self.reset_speed - 10)  # Temporary slowdown
+                    self.user_override_speed = max(10, self.user_override_speed - 20)  # Temporary slowdown
                 else:
-                    self.user_override_speed = max(25, self.reset_speed - 15)
+                    self.user_override_speed = max(25, self.user_override_speed - 15)
                 self.start_recovery_timer(7)
 
 
             ##################### INTERVENE BUTTON (J key) ############################
-            if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].intervene:
+            if self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].intervene and self.scenario_identifier != "trial_1":
 
                 self.is_in_override_mode = True
                 if self.trigger_active == "stop":
@@ -426,20 +429,20 @@ class MyVehicleProcess:
                 new_trigger = box['behavior']
                 if new_trigger == "final":
                     self.carlainterface_mp.pipe_comm.send({"stop_all_modules": True})
-                break  # Exit loop once a trigger is found
-        # if box['behavior'] == "stop":
-        #     self._control.brake = 0.5  # medium braking force
-        #     self._control.throttle = 0
-        #     self.user_override_speed = 0
-        #     self.start_recovery_timer(7)
-        #
-        # if box['behavior'] == "continue":
-        #     self.user_override_speed = max(10,
-        #                                    self.user_override_speed - 20)  # Prevent zero speed in movement areas
-        #     self.start_recovery_timer(5)
-        # if box['behavior'] == "final":
-        #     self.user_override_speed = 0
 
+                if box['behavior'] == "stop":
+                    self.is_in_override_mode = True
+                    self._control.brake = 0.5  # medium braking force
+                    self._control.throttle = 0
+                    self.user_override_speed = 0
+                    self.start_recovery_timer(7)
+
+                if box['behavior'] == "continue":
+                    self.is_in_override_mode = True
+                    self.user_override_speed = max(15,
+                                                   self.user_override_speed - 15)  # Prevent zero speed in movement areas
+                    self.start_recovery_timer(5)
+                break  # Exit loop once a trigger is found
         # Only reset trigger if the vehicle left the last trigger box
         if self.trigger_active and new_trigger is None:
             self.trigger_active = None
