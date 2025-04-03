@@ -252,10 +252,9 @@ class MyVehicleProcess:
                 # print(f"Moving to waypoint {self.current_waypoint_index}")
 
     def load_scenario_data(self, scenario_identifier, trajectory_path):
-        if scenario_identifier == "trial_1":
-            self.waypoints = self.define_manual_waypoints(trajectory_path)
-            self.trigger_boxes = self.load_trigger_boxes(scenario_identifier)
-            self.flag = True
+        self.waypoints = self.define_manual_waypoints(trajectory_path)
+        self.trigger_boxes = self.load_trigger_boxes(scenario_identifier)
+        self.flag = True
 
     ####GET THE NEXT WAYPOINT IN THE LIST
     def get_next_waypoint(self, waypoints):
@@ -274,14 +273,14 @@ class MyVehicleProcess:
             triggerlist = [
                 {'location': carla.Location(x=350.42390625, y=-126.11979492, z=1.05), 'behavior': 'continue'},
                 {'location': carla.Location(x=351.71304688, y=-238.25185547, z=1.05), 'behavior': 'stop'},
-                {'location': carla.Location(x=321.00396484, y=-204.86238281, z=1.05), 'behavior': 'final'}]
+                {'location': carla.Location(x=295.42828125, y=-223.13464844, z=1.05), 'behavior': 'final'}]
             return triggerlist
         if scenario_identifier == "trial_2":
             self.scenario_identifier = scenario_identifier
             triggerlist = [
                 {'location': carla.Location(x=201.01957031, y=-299.20400391, z=1.05), 'behavior': 'continue'},
                 {'location': carla.Location(x=211.78013672, y=-245.17873047, z=1.05), 'behavior': 'stop'},
-                {'location': carla.Location(x=297.74673828, y=-223.13464844, z=1.05), 'behavior': 'final'}]
+                {'location': carla.Location(x=321.00396484, y=-204.86238281, z=1.05), 'behavior': 'final'}]
             return triggerlist
         if scenario_identifier == "trial_3":
             self.scenario_identifier = scenario_identifier
@@ -334,7 +333,8 @@ class MyVehicleProcess:
         if self.settings.selected_input != 'None' and hasattr(self, 'spawned_vehicle'):
 
             ###STEERING FUNCTION now invoked from scenario
-            self.steer_to_waypoint()
+            if self.trigger_active != "final":
+                self.steer_to_waypoint()
             ###STEERING FUNCTION
 
             # self._control.steer = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].steering_angle / math.radians(450)
@@ -348,30 +348,31 @@ class MyVehicleProcess:
 
             if self.settings.set_velocity:
                 if self.flag and self.trigger_active != "final":
-                    current_waypoint = self.waypoints[self.current_waypoint_index]
-                    if not self.is_in_override_mode:
-                        self.user_override_speed = current_waypoint['speed']  # Target speed from waypoint
-                        vel_error = self.user_override_speed * 3.6 - self.get_current_speed()
-                    else:
-                        vel_error = self.user_override_speed - self.get_current_speed()
-                    self.reset_speed = current_waypoint['speed'] * 3.6
-                    vel_error_rate = (math.sqrt(
-                        self.spawned_vehicle.get_acceleration().x ** 2 +
-                        self.spawned_vehicle.get_acceleration().y ** 2 +
-                        self.spawned_vehicle.get_acceleration().z ** 2) * 3.6)
-                    error_velocity = [vel_error, vel_error_rate]
-
-                    pd_vel_output = self.velocity_PD_controller(error_velocity)
-                    if pd_vel_output < 0:
-                        self._control.brake = -pd_vel_output
-                        self._control.throttle = 0
-                        if pd_vel_output < -1:
-                            self._control.brake = 1
-                    elif pd_vel_output > 0:
-                        if self._control.brake == 0:
-                            self._control.throttle = pd_vel_output
+                    if self.current_waypoint_index < len(self.waypoints):
+                        current_waypoint = self.waypoints[self.current_waypoint_index]
+                        if not self.is_in_override_mode:
+                            self.user_override_speed = current_waypoint['speed']  # Target speed from waypoint
+                            vel_error = self.user_override_speed * 3.6 - self.get_current_speed()
                         else:
+                            vel_error = self.user_override_speed - self.get_current_speed()
+                        self.reset_speed = current_waypoint['speed'] * 3.6
+                        vel_error_rate = (math.sqrt(
+                            self.spawned_vehicle.get_acceleration().x ** 2 +
+                            self.spawned_vehicle.get_acceleration().y ** 2 +
+                            self.spawned_vehicle.get_acceleration().z ** 2) * 3.6)
+                        error_velocity = [vel_error, vel_error_rate]
+
+                        pd_vel_output = self.velocity_PD_controller(error_velocity)
+                        if pd_vel_output < 0:
+                            self._control.brake = -pd_vel_output
                             self._control.throttle = 0
+                            if pd_vel_output < -1:
+                                self._control.brake = 1
+                        elif pd_vel_output > 0:
+                            if self._control.brake == 0:
+                                self._control.throttle = pd_vel_output
+                            else:
+                                self._control.throttle = 0
             else:
                 self._control.throttle = self.carlainterface_mp.shared_variables_hardware.inputs[
                     self.settings.selected_input].throttle
@@ -443,7 +444,7 @@ class MyVehicleProcess:
         new_trigger = None  # Default to None
 
         for box in self.trigger_boxes:
-            if vehicle_location.distance(box['location']) < 3:  # Inside trigger box
+            if vehicle_location.distance(box['location']) < 5:  # Inside trigger box
                 new_trigger = box['behavior']
                 if new_trigger == "final":
                     self.is_in_override_mode = True
