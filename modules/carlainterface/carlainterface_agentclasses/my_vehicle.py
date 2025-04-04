@@ -164,7 +164,7 @@ class MyVehicleProcess:
         self.is_in_override_mode = False
         self.scenario_identifier = None
         self.trigger_has_fired = False
-        self.flag = False
+        self.scenario_loaded = False
         ## Holds the current trigger which is active (continue/stop)
         self.trigger_active = None
         ## Here to allow us to mess wit hthe speed while in cruise control
@@ -200,72 +200,12 @@ class MyVehicleProcess:
                 physics.gear_switch_time = 0
                 self.spawned_vehicle.apply_physics_control(physics)
 
-    ###RESPONSIBLE TOWARDS STEERING FOR THE WAYPOINTS
-    def steer_to_waypoint(self):
-        """
-        Adjusts the vehicle's steering angle to follow the waypoints.
-        """
-
-        next_wp = self.get_next_waypoint(self.waypoints)
-        if next_wp:
-            vehicle_transform = self.spawned_vehicle.get_transform()
-            vehicle_location = vehicle_transform.location
-            vehicle_rotation = vehicle_transform.rotation.yaw  # Vehicle heading
-
-            target_location = next_wp['transform'].location
-            target_vector = np.array([target_location.x - vehicle_location.x, target_location.y - vehicle_location.y])
-            vehicle_vector = np.array(
-                [math.cos(math.radians(vehicle_rotation)), math.sin(math.radians(vehicle_rotation))])
-
-            # Compute the steering angle error
-            angle_diff = np.arctan2(np.cross(vehicle_vector, target_vector), np.dot(vehicle_vector, target_vector))
-            controller = PIDController(kp=0.2, ki=0.05, kd=0.8)
-            ###If the car speed = x  then the distance to the next point has to be y
-            ### x >>  the bigger the y
-            ### x << the smaller the y
-            steering_correction = controller.compute(angle_diff)
-            # Apply a scaling factor to avoid over-steering
-
-            if abs(steering_correction) < 0.09:
-                steering_correction = 0
-            self._control.steer = (0.9 * self._control.steer) + (0.1 * steering_correction)
-            # If close enough, move to next waypoint
-            speed = self.get_current_speed()
-            if speed >= 80:
-                waypoint_skip = 15
-                threshold_distance = 13
-            elif speed >= 70:
-                waypoint_skip = 8
-                threshold_distance = 10
-            elif speed >= 60:
-                waypoint_skip = 6
-                threshold_distance = 7
-            elif speed >= 50:
-                waypoint_skip = 3
-                threshold_distance = 6
-            else:
-                waypoint_skip = 1
-                threshold_distance = 5
-            if vehicle_location.distance(target_location) < threshold_distance:  # Adjust distance threshold if needed
-
-                self.current_waypoint_index += waypoint_skip
-                # print(f"Moving to waypoint {self.current_waypoint_index}")
 
     def load_scenario_data(self, scenario_identifier, trajectory_path):
         self.waypoints = self.define_manual_waypoints(trajectory_path)
         self.trigger_boxes = self.load_trigger_boxes(scenario_identifier)
-        self.flag = True
+        self.scenario_loaded = True
 
-    ####GET THE NEXT WAYPOINT IN THE LIST
-    def get_next_waypoint(self, waypoints):
-        """
-        Gets the next waypoint in the list.
-        """
-        if self.current_waypoint_index >= len(waypoints):
-            print("✅ Circuit Completed!")
-
-            return None  # No more waypoints, the circuit is finished
-        return waypoints[self.current_waypoint_index]
 
     def load_trigger_boxes(self, scenario_identifier):
         if scenario_identifier == "trial_1":
@@ -330,15 +270,8 @@ class MyVehicleProcess:
         return current_speed
 
     def do(self):
-        if self.settings.selected_input != 'None' and hasattr(self, 'spawned_vehicle'):
-
-            ###STEERING FUNCTION now invoked from scenario
-            if self.trigger_active != "final":
-                self.steer_to_waypoint()
-            ###STEERING FUNCTION
-
+        if self.settings.selected_input != 'None' and hasattr(self, 'spawned_vehicle') and self.spawned_vehicle is not None:
             # self._control.steer = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].steering_angle / math.radians(450)
-
             self._control.reverse = self.carlainterface_mp.shared_variables_hardware.inputs[
                 self.settings.selected_input].reverse
             self._control.hand_brake = self.carlainterface_mp.shared_variables_hardware.inputs[
@@ -347,15 +280,19 @@ class MyVehicleProcess:
                 self.settings.selected_input].brake
 
             if self.settings.set_velocity:
-                if self.flag and self.trigger_active != "final":
+                if self.scenario_loaded and self.trigger_active != "final":
                     if self.current_waypoint_index < len(self.waypoints):
+
                         current_waypoint = self.waypoints[self.current_waypoint_index]
+
                         if not self.is_in_override_mode:
-                            self.user_override_speed = current_waypoint['speed']  # Target speed from waypoint
-                            vel_error = self.user_override_speed * 3.6 - self.get_current_speed()
+                            self.user_override_speed = current_waypoint['speed'] * 3.6  # Target speed from waypoint
+                            vel_error = self.user_override_speed - self.get_current_speed()
                         else:
                             vel_error = self.user_override_speed - self.get_current_speed()
+                        #Used to reset the speed after user/trigger box speed intervention
                         self.reset_speed = current_waypoint['speed'] * 3.6
+
                         vel_error_rate = (math.sqrt(
                             self.spawned_vehicle.get_acceleration().x ** 2 +
                             self.spawned_vehicle.get_acceleration().y ** 2 +
@@ -377,9 +314,17 @@ class MyVehicleProcess:
                 self._control.throttle = self.carlainterface_mp.shared_variables_hardware.inputs[
                     self.settings.selected_input].throttle
 
-            ##################ADJUST SPEED ON LOCATION################################
-            vehicle_location = self.spawned_vehicle.get_transform().location
-            trigger_behaviour = self.adjust_speed_trigger(vehicle_location=vehicle_location)
+            ###STEERING FUNCTION
+            if self.trigger_active != "final":
+                ###STEERING FUNCTION
+                self.steer_to_waypoint()
+                vehicle_location = self.spawned_vehicle.get_transform().location
+                ##################ADJUST SPEED ON LOCATION################################
+                trigger_behaviour = self.adjust_speed_trigger(vehicle_location=vehicle_location)
+
+
+
+
 
             ##################### INFORM BUTTON (I key)(TAP) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[
@@ -421,7 +366,18 @@ class MyVehicleProcess:
             except IndexError:
                 pass
 
-        self.set_shared_variables()
+            self.set_shared_variables()
+
+    ####GET THE NEXT WAYPOINT IN THE LIST
+    def get_next_waypoint(self, waypoints):
+        """
+        Gets the next waypoint in the list.
+        """
+        if self.current_waypoint_index >= len(waypoints):
+            print("✅ Circuit Completed!")
+
+            return None  # No more waypoints, the circuit is finished
+        return waypoints[self.current_waypoint_index]
 
     def start_recovery_timer(self, time):
         """Starts a timer to restore speed after a delay."""
@@ -449,7 +405,7 @@ class MyVehicleProcess:
                 if new_trigger == "final":
                     self.is_in_override_mode = True
                     self.user_override_speed = 0
-                    self.carlainterface_mp.pipe_comm.send({"stop_all_modules": True})
+                    #self.carlainterface_mp.pipe_comm.send({"stop_all_modules": True})
 
                 if box['behavior'] == "stop" and not self.trigger_has_fired:
                     self.trigger_has_fired = True
@@ -457,7 +413,7 @@ class MyVehicleProcess:
                     self._control.brake = 0.5  # medium braking force
                     self._control.throttle = 0
                     self.user_override_speed = 0
-                    self.start_recovery_timer(5)
+                    self.start_recovery_timer(7)
 
                 if box['behavior'] == "continue" and not self.trigger_has_fired:
                     self.trigger_has_fired = True
@@ -474,19 +430,52 @@ class MyVehicleProcess:
         self.trigger_active = new_trigger  # Store active trigger behavior
         return new_trigger
 
-    def display_hud_message(self, message, duration=2):
-        if hasattr(self, 'spawned_vehicle'):
+
+    ###RESPONSIBLE TOWARDS STEERING FOR THE WAYPOINTS
+    def steer_to_waypoint(self):
+        """
+        Adjusts the vehicle's steering angle to follow the waypoints.
+        """
+
+        next_wp = self.get_next_waypoint(self.waypoints)
+        if next_wp:
             vehicle_transform = self.spawned_vehicle.get_transform()
-            hud_location = vehicle_transform.location  # Adjust as needed
-            carlaLoc = carla.Location(x=-0.45, y=0, z=0.7)
-            newloc = hud_location + carlaLoc
-            self.carlainterface_mp.world.debug.draw_string(
-                newloc,
-                message,
-                draw_shadow=True,
-                color=carla.Color(r=0, g=0, b=0),
-                life_time=duration
-            )
+            vehicle_location = vehicle_transform.location
+            vehicle_rotation = vehicle_transform.rotation.yaw  # Vehicle heading
+
+            target_location = next_wp['transform'].location
+            target_vector = np.array([target_location.x - vehicle_location.x, target_location.y - vehicle_location.y])
+            vehicle_vector = np.array(
+                [math.cos(math.radians(vehicle_rotation)), math.sin(math.radians(vehicle_rotation))])
+
+            # Compute the steering angle error
+            angle_diff = np.arctan2(np.cross(vehicle_vector, target_vector), np.dot(vehicle_vector, target_vector))
+            controller = PIDController(kp=0.2, ki=0.05, kd=0.8)
+            steering_correction = controller.compute(angle_diff)
+            # Apply a scaling factor to avoid over-steering
+
+            if abs(steering_correction) < 0.09:
+                steering_correction = 0
+            self._control.steer = (0.9 * self._control.steer) + (0.1 * steering_correction)
+            # If close enough, move to next waypoint
+            speed = self.get_current_speed()
+            if speed >= 80:
+                waypoint_skip = 15
+                threshold_distance = 13
+            elif speed >= 70:
+                waypoint_skip = 8
+                threshold_distance = 10
+            elif speed >= 60:
+                waypoint_skip = 6
+                threshold_distance = 7
+            elif speed >= 50:
+                waypoint_skip = 3
+                threshold_distance = 6
+            else:
+                waypoint_skip = 1
+                threshold_distance = 5
+            if vehicle_location.distance(target_location) < threshold_distance:  # Adjust distance threshold if needed
+                self.current_waypoint_index += waypoint_skip
 
     def destroy(self):
         if hasattr(self, 'spawned_vehicle') and self.spawned_vehicle is not None:

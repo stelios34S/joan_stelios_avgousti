@@ -13,6 +13,7 @@ class ScenarioTrial1(Scenario):
         self.identifier = "trial_1"
         self.trajectory_path = "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory1.csv"  # Load predefined waypoints
         self.scenario_loaded = False
+
     @property
     def name(self):
         return "Trial 1"
@@ -23,5 +24,19 @@ class ScenarioTrial1(Scenario):
         based on its interaction with waypoints and trigger boxes.
         """
         if not self.scenario_loaded:
-            carla_interface_process.agent_objects['My Vehicle_1'].load_scenario_data(self.identifier, self.trajectory_path)
+            carla_interface_process.agent_objects['My Vehicle_1'].load_scenario_data(self.identifier,
+                                                                                     self.trajectory_path)
             self.scenario_loaded = True
+
+        # Check final position trigger manually here
+        if carla_interface_process.agent_objects['My Vehicle_1'].spawned_vehicle is not None:
+            vehicle = carla_interface_process.agent_objects['My Vehicle_1']
+            vehicle_location = vehicle.spawned_vehicle.get_location()
+            final_location = carla.Location(x=295.42828125, y=-223.13464844, z=1.05)
+            #final_location = carla.Location(x=13.04862549, y=-209.53740234, z=1.05)
+            distance = vehicle_location.distance(final_location)
+            if distance < 5.0:  # Allow some leeway
+                print("✅ Trial 1 complete, stopping modules")
+                vehicle.destroy()
+                carla_interface_process.pipe_comm.send({"stop_all_modules": True})
+
