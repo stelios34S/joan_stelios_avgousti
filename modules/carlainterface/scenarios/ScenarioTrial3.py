@@ -24,14 +24,15 @@ class ScenarioTrial3(Scenario):
             carla_interface_process.agent_objects['My Vehicle_1'].load_scenario_data(self.identifier,
                                                                                      self.trajectory_path)
             self.scenario_loaded = True
+        if carla_interface_process.agent_objects['My Vehicle_1'].spawned_vehicle is not None:
+            # Check final position trigger manually here
+            vehicle = carla_interface_process.agent_objects['My Vehicle_1']
+            vehicle_location = vehicle.spawned_vehicle.get_location()
+            final_location = carla.Location(x=131.10570312, y=-217.95554688, z=1.05)
+            distance = vehicle_location.distance(final_location)
 
-        # Check final position trigger manually here
-        vehicle = carla_interface_process.agent_objects['My Vehicle_1']
-        vehicle_location = vehicle.spawned_vehicle.get_location()
-        final_location = carla.Location(x=321.00396484, y=-204.86238281, z=1.05)
-        distance = vehicle_location.distance(final_location)
-
-        if distance < 5.0:  # Allow some leeway
-            print("✅ Trial 2 complete, stopping modules")
-            carla_interface_process.pipe_comm.send({"stop_all_modules": True})
+            if distance < 5.0:  # Allow some leeway
+                print("✅ Trial 3 complete, stopping modules")
+                vehicle.destroy()
+                carla_interface_process.pipe_comm.send({"stop_all_modules": True})
 

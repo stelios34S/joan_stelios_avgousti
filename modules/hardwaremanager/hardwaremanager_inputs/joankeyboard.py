@@ -1,7 +1,7 @@
 import math
 import os
 import keyboard
-
+from PyQt5 import QtCore
 from PyQt5 import QtWidgets, QtGui, uic
 from modules.hardwaremanager.hardwaremanager_inputtypes import HardwareInputTypes
 
@@ -138,6 +138,8 @@ class KeyBoardSettings:
         ##TODO: ADD NEW BUTTONS FOR INTERVENE AND INFORM
         self.inform_key=QtGui.QKeySequence('i')[0]
         self.intervene_key = QtGui.QKeySequence("j")[0]
+        # self.inform_key = QtCore.Qt.Key.Key_0  # Numpad 0 / Insert
+        # self.intervene_key = QtCore.Qt.Key.Key_Period  # Numpad . / Delete
         ##################################################
         self.identifier = identifier
         self.input_type = HardwareInputTypes.KEYBOARD.value

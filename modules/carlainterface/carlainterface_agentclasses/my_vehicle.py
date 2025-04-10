@@ -225,9 +225,12 @@ class MyVehicleProcess:
         if scenario_identifier == "trial_3":
             self.scenario_identifier = scenario_identifier
             return [
-                {'location': carla.Location(x=201.01957031, y=-299.20400391, z=1.05), 'behavior': 'continue'},
-                {'location': carla.Location(x=211.78013672, y=-245.17873047, z=1.05), 'behavior': 'stop'},
-                {'location': carla.Location(x=321.00396484, y=-204.86238281, z=1.05), 'behavior': 'final'}]
+                {'location': carla.Location(x=-45.48157715, y=372.21347656, z=1.05), 'behavior': 'continue'},
+                {'location': carla.Location(x=310.480, y=-159.28362305, z=1.05), 'behavior': 'continue'},
+                {'location': carla.Location(x=255.07232422, y=-301.47052734, z=1.05), 'behavior': 'continue'},
+                {'location': carla.Location(x=114.86140625, y=-174.52228516, z=1.05), 'behavior': 'stop'},
+                {'location': carla.Location(x=203.16382812, y=-195.25564453, z=1.05), 'behavior': 'stop'},
+                {'location': carla.Location(x=131.10570312, y=-217.95554688, z=1.05), 'behavior': 'final'}]
 
         # Slight slowdown
         # {'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
