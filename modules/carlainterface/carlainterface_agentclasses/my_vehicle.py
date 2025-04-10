@@ -211,20 +211,24 @@ class MyVehicleProcess:
         if scenario_identifier == "trial_1":
             self.scenario_identifier = scenario_identifier
             triggerlist = [
-                {'location': carla.Location(x=350.42390625, y=-126.11979492, z=1.05), 'behavior': 'continue'},
-                {'location': carla.Location(x=351.71304688, y=-238.25185547, z=1.05), 'behavior': 'stop'},
+                {'location': carla.Location(x=349.570, y=-125.3827832, z=1.05), 'behavior': 'continue'},
+                {'location': carla.Location(x=352.206875, y=-235.24408203, z=1.05), 'behavior': 'stop'},
                 {'location': carla.Location(x=295.42828125, y=-223.13464844, z=1.05), 'behavior': 'final'}]
             return triggerlist
         if scenario_identifier == "trial_2":
             self.scenario_identifier = scenario_identifier
             triggerlist = [
-                {'location': carla.Location(x=201.01957031, y=-299.20400391, z=1.05), 'behavior': 'continue'},
-                {'location': carla.Location(x=211.78013672, y=-245.17873047, z=1.05), 'behavior': 'stop'},
-                {'location': carla.Location(x=321.00396484, y=-204.86238281, z=1.05), 'behavior': 'final'}]
+                {'location': carla.Location(x=200.37308594, y=-300.37574219, z=1.05), 'behavior': 'continue'},
+                {'location': carla.Location(x=211.56837891, y=-245.08835938, z=1.05), 'behavior': 'stop'},
+                {'location': carla.Location(x=329.82621094, y=-182.390625, z=1.05), 'behavior': 'final'}]
             return triggerlist
         if scenario_identifier == "trial_3":
             self.scenario_identifier = scenario_identifier
-            return []
+            return [
+                {'location': carla.Location(x=201.01957031, y=-299.20400391, z=1.05), 'behavior': 'continue'},
+                {'location': carla.Location(x=211.78013672, y=-245.17873047, z=1.05), 'behavior': 'stop'},
+                {'location': carla.Location(x=321.00396484, y=-204.86238281, z=1.05), 'behavior': 'final'}]
+
         # Slight slowdown
         # {'location': carla.Location(x=350, y=250, z=0), 'behavior': 'slowdown', 'target_speed': 20},  # Slowdown box
 
@@ -347,7 +351,6 @@ class MyVehicleProcess:
 
                 self.is_in_override_mode = True
                 if self.trigger_active == "stop":
-                    # TODO: ONLY FLIMSY PART######
                     # Car originally planned to stop -> Override and keep moving
                     self.user_override_speed = max(15, self.reset_speed)
                 elif self.trigger_active == "continue":
@@ -436,6 +439,7 @@ class MyVehicleProcess:
         """
         Adjusts the vehicle's steering angle to follow the waypoints.
         """
+       # , target_location.z - vehicle_location.z
 
         next_wp = self.get_next_waypoint(self.waypoints)
         if next_wp:
@@ -466,9 +470,12 @@ class MyVehicleProcess:
                 waypoint_skip = 8
                 threshold_distance = 10
             elif speed >= 60:
-                waypoint_skip = 6
-                threshold_distance = 7
+                waypoint_skip = 7
+                threshold_distance = 8
             elif speed >= 50:
+                waypoint_skip = 4
+                threshold_distance = 7
+            elif speed >= 40:
                 waypoint_skip = 3
                 threshold_distance = 6
             else:
