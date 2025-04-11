@@ -11,7 +11,7 @@ class ScenarioTrial1(Scenario):
 
         ####MAYBE SEND THIS THROUGH TO THE FUNCTION OF THE VEHICLE
         self.identifier = "trial_1"
-        self.trajectory_path = "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory1.csv"  # Load predefined waypoints
+        self.trajectory_path = "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory1ex1.csv"  # Load predefined waypoints
         self.scenario_loaded = False
         self.cruisecontrolflag = False
 

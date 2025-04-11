@@ -150,7 +150,7 @@ class MyVehicleProcess:
             self._BP = random.choice(
                 self.carlainterface_mp.vehicle_blueprint_library.filter("vehicle." + self.settings.selected_car))
         self.world_map = self.carlainterface_mp.world.get_map()
-        #self.trajectory_file_path = "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory1.csv"
+        #self.trajectory_file_path = "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory1ex1.csv"
 
         ####DEFINE TRIGGER BOXES TO STOP OR SLO DOWN
         # Define speed adjustment trigger boxes
@@ -212,7 +212,7 @@ class MyVehicleProcess:
             self.scenario_identifier = scenario_identifier
             triggerlist = [
                 {'location': carla.Location(x=349.570, y=-125.3827832, z=1.05), 'behavior': 'continue'},
-                {'location': carla.Location(x=352.206875, y=-235.24408203, z=1.05), 'behavior': 'stop'},
+                {'location': carla.Location(x=352.23339844, y=-237.14490234, z=1.05), 'behavior': 'stop'},
                 {'location': carla.Location(x=295.42828125, y=-223.13464844, z=1.05), 'behavior': 'final'}]
             return triggerlist
         if scenario_identifier == "trial_2":
@@ -406,7 +406,7 @@ class MyVehicleProcess:
         new_trigger = None  # Default to None
 
         for box in self.trigger_boxes:
-            if vehicle_location.distance(box['location']) < 5:  # Inside trigger box
+            if vehicle_location.distance(box['location']) < 7:  # Inside trigger box
                 new_trigger = box['behavior']
                 if new_trigger == "final":
                     self.is_in_override_mode = True
