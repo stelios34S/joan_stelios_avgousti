@@ -40,7 +40,7 @@ class ScenarioTrial3(Scenario):
             if carla_interface_process.agent_objects['Ego Vehicle_1'].spawned_vehicle is not None:
                 bike = carla_interface_process.agent_objects['Ego Vehicle_1']
                 bikeloc = bike.spawned_vehicle.get_location()
-                checkloc = carla.Location(x=203.01726562, y=-180.54595703, z=1.05)
+                checkloc = carla.Location(x=202.96996094, y=-181.60287109, z=1.05)
                 destroyloc = carla.Location(x=199.13095703, y=-157.41007812,z=1.05)
                 if vehicle_location.distance(checkloc) < 5 and not self.cruisecontrolflag:
                     self.cruisecontrolflag = True
@@ -64,7 +64,7 @@ class ScenarioTrial3(Scenario):
             if carla_interface_process.agent_objects['Ego Vehicle_3'].spawned_vehicle is not None:
                 bike = carla_interface_process.agent_objects['Ego Vehicle_3']
                 bikeloc = bike.spawned_vehicle.get_location()
-                checkloc = carla.Location(x=253.78289062, y=-304.5028125, z=1.05)
+                checkloc = carla.Location(x=251.75382812, y=-307.34134766, z=1.05)
                 destroyloc = carla.Location(x=259.50169922, y=-307.10992188,z=1.05)
                 if vehicle_location.distance(checkloc) < 5 and not self.cruisecontrolflag:
                     self.cruisecontrolflag = True
@@ -76,7 +76,7 @@ class ScenarioTrial3(Scenario):
             if carla_interface_process.agent_objects['Ego Vehicle_4'].spawned_vehicle is not None:
                 bike = carla_interface_process.agent_objects['Ego Vehicle_4']
                 bikeloc = bike.spawned_vehicle.get_location()
-                checkloc = carla.Location(x=252.30695312, y=-174.53888672, z=1.05)
+                checkloc = carla.Location(x=254.06978516, y=-180.79351562, z=1.05)
                 destroyloc = carla.Location(x=303.38798828, y=-168.13054688,z=1.05)
                 if vehicle_location.distance(checkloc) < 5 and not self.cruisecontrolflag:
                     self.cruisecontrolflag = True

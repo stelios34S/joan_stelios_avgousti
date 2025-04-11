@@ -129,6 +129,16 @@
                         "identifier": "My Vehicle_1",
                         "agent_type": 2,
                         "selected_spawnpoint": "Spawnpoint 0"
+                    },
+                    "Ego Vehicle_1": {
+                        "selected_spawnpoint": "Spawnpoint 9",
+                        "selected_input": "Keyboard_2",
+                        "selected_controller": "None",
+                        "selected_car": "gazelle.omafiets",
+                        "velocity": 14,
+                        "set_velocity": false,
+                        "identifier": "Ego Vehicle_1",
+                        "agent_type": 0
                     }
                 },
                 "current_scenario": "Trial 1"

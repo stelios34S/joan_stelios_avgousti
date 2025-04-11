@@ -225,7 +225,7 @@ class MyVehicleProcess:
         if scenario_identifier == "trial_3":
             self.scenario_identifier = scenario_identifier
             return [
-                {'location': carla.Location(x=-51.78432617, y=-51.78432617, z=1.05), 'behavior': 'continue'},
+                {'location': carla.Location(x=-47.07625488, y=372.60867188, z=1.05), 'behavior': 'continue'},
                 {'location': carla.Location(x=310.480, y=-159.28362305, z=1.05), 'behavior': 'continue'},
                 {'location': carla.Location(x=255.07232422, y=-301.47052734, z=1.05), 'behavior': 'continue'},
                 {'location': carla.Location(x=114.86140625, y=-174.52228516, z=1.05), 'behavior': 'stop'},
@@ -335,7 +335,7 @@ class MyVehicleProcess:
 
             ##################### INFORM BUTTON (I key)(TAP) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[
-                self.settings.selected_input].inform and self.scenario_identifier != "trial_1":
+                self.settings.selected_input].inform: #and self.scenario_identifier != "trial_1":
                 # print("KATI KATI")
                 self.is_in_override_mode = True
                 if self.trigger_active == "stop":  # If the box wants a stop, brake harder
@@ -345,12 +345,12 @@ class MyVehicleProcess:
                 elif self.trigger_active == "continue":
                     self.user_override_speed = max(10, self.user_override_speed - 20)  # Temporary slowdown
                 else:
-                    self.user_override_speed = max(25, self.user_override_speed - 15)
+                    self.user_override_speed = max(20, self.user_override_speed - 15)
                 self.start_recovery_timer(7)
 
             ##################### INTERVENE BUTTON (J key) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[
-                self.settings.selected_input].intervene and self.scenario_identifier != "trial_1":
+                self.settings.selected_input].intervene: #and self.scenario_identifier != "trial_1":
 
                 self.is_in_override_mode = True
                 if self.trigger_active == "stop":

@@ -13,6 +13,7 @@ class ScenarioTrial1(Scenario):
         self.identifier = "trial_1"
         self.trajectory_path = "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory1.csv"  # Load predefined waypoints
         self.scenario_loaded = False
+        self.cruisecontrolflag = False
 
     @property
     def name(self):
@@ -40,3 +41,15 @@ class ScenarioTrial1(Scenario):
                 vehicle.destroy()
                 carla_interface_process.pipe_comm.send({"stop_all_modules": True})
 
+            if carla_interface_process.agent_objects['Ego Vehicle_1'].spawned_vehicle is not None:
+                bike = carla_interface_process.agent_objects['Ego Vehicle_1']
+                bikeloc = bike.spawned_vehicle.get_location()
+                checkloc = carla.Location(x=352.99074219, y=-224.35539062, z=1.05)
+                destroyloc = carla.Location(x=355.61777344, y=-223.8421875, z=1.05)
+                if vehicle_location.distance(checkloc) < 4 and not self.cruisecontrolflag:
+                    self.cruisecontrolflag = True
+                    bike.settings.set_velocity = True
+                    bike.settings.velocity = 15
+                if bikeloc.distance(destroyloc) < 4:
+                    self.cruisecontrolflag = False
+                    bike.destroy()
