@@ -24,6 +24,70 @@
                     "steer_sensitivity": 50,
                     "throttle_key": 87,
                     "throttle_sensitivity": 50
+                },
+                "Keyboard_2": {
+                    "auto_center": true,
+                    "brake_key": 1,
+                    "brake_sensitivity": 2,
+                    "handbrake_key": 3,
+                    "identifier": "Keyboard_2",
+                    "input_type": 0,
+                    "max_steer": 1.5708,
+                    "min_steer": -1.5708,
+                    "reverse_key": 4,
+                    "steer_left_key": 5,
+                    "steer_right_key": 6,
+                    "steer_sensitivity": 7,
+                    "throttle_key": 8,
+                    "throttle_sensitivity": 9
+                },
+                "Keyboard_3": {
+                    "auto_center": true,
+                    "brake_key": 1,
+                    "brake_sensitivity": 2,
+                    "handbrake_key": 3,
+                    "identifier": "Keyboard_3",
+                    "input_type": 0,
+                    "max_steer": 1.5708,
+                    "min_steer": -1.5708,
+                    "reverse_key": 4,
+                    "steer_left_key": 5,
+                    "steer_right_key": 6,
+                    "steer_sensitivity": 7,
+                    "throttle_key": 8,
+                    "throttle_sensitivity": 9
+                },
+                "Keyboard_4": {
+                    "auto_center": true,
+                    "brake_key": 1,
+                    "brake_sensitivity": 2,
+                    "handbrake_key": 3,
+                    "identifier": "Keyboard_4",
+                    "input_type": 0,
+                    "max_steer": 1.5708,
+                    "min_steer": -1.5708,
+                    "reverse_key": 4,
+                    "steer_left_key": 5,
+                    "steer_right_key": 6,
+                    "steer_sensitivity": 7,
+                    "throttle_key": 8,
+                    "throttle_sensitivity": 9
+                },
+                "Keyboard_5": {
+                    "auto_center": true,
+                    "brake_key": 1,
+                    "brake_sensitivity": 2,
+                    "handbrake_key": 3,
+                    "identifier": "Keyboard_5",
+                    "input_type": 0,
+                    "max_steer": 1.5708,
+                    "min_steer": -1.5708,
+                    "reverse_key": 4,
+                    "steer_left_key": 5,
+                    "steer_right_key": 6,
+                    "steer_sensitivity": 7,
+                    "throttle_key": 8,
+                    "throttle_sensitivity": 9
                 }
             }
         },
@@ -69,7 +133,8 @@
                 },
                 "current_scenario": "Trial 1"
             },
-            "NPC Controller Manager": {},
+            "NPC Controller Manager": {
+            },
             "Data Recorder" : {
                     "path_to_save_file": "C:\\Users\\localadmin\\Documents\\GitHub\\joan_stelios_avgousti\\DataToAnalyze\\DataGroup1\\joan_dataTrial1.csv",
                     "variables_to_be_saved": [],
@@ -79,7 +144,8 @@
             }
         },
         "Trial 2": {
-            "Hardware Manager": {},
+            "Hardware Manager": {
+            },
             "Carla Interface": {
                 "agents": {
                     "My Vehicle_1": {
@@ -91,6 +157,26 @@
                         "set_velocity": true,
                         "identifier": "My Vehicle_1",
                         "agent_type": 2
+                    },
+                    "Ego Vehicle_1": {
+                        "selected_spawnpoint": "Spawnpoint 3",
+                        "selected_input": "Keyboard_2",
+                        "selected_controller": "None",
+                        "selected_car": "gazelle.omafiets",
+                        "velocity": 14,
+                        "set_velocity": false,
+                        "identifier": "Ego Vehicle_1",
+                        "agent_type": 0
+                    },
+                    "Ego Vehicle_2":{
+                        "selected_spawnpoint": "Spawnpoint 4",
+                        "selected_input": "Keyboard_3",
+                        "selected_controller": "None",
+                        "selected_car": "ford.crown",
+                        "velocity": 25,
+                        "set_velocity": false,
+                        "identifier": "Ego Vehicle_2",
+                        "agent_type": 0
                     }
                 },
                 "current_scenario": "Trial 2"
@@ -117,6 +203,46 @@
                         "set_velocity": true,
                         "identifier": "My Vehicle_1",
                         "agent_type": 2
+                    },
+                    "Ego Vehicle_1": {
+                        "selected_spawnpoint": "Spawnpoint 5",
+                        "selected_input": "Keyboard_2",
+                        "selected_controller": "None",
+                        "selected_car": "ford.crown",
+                        "velocity": 25,
+                        "set_velocity": false,
+                        "identifier": "Ego Vehicle_1",
+                        "agent_type": 0
+                    },
+                    "Ego Vehicle_2":{
+                        "selected_spawnpoint": "Spawnpoint 6",
+                        "selected_input": "Keyboard_3",
+                        "selected_controller": "None",
+                        "selected_car": "gazelle.omafiets",
+                        "velocity": 14,
+                        "set_velocity": false,
+                        "identifier": "Ego Vehicle_2",
+                        "agent_type": 0
+                    },
+                    "Ego Vehicle_3":{
+                        "selected_spawnpoint": "Spawnpoint 7",
+                        "selected_input": "Keyboard_4",
+                        "selected_controller": "None",
+                        "selected_car": "gazelle.omafiets",
+                        "velocity": 14,
+                        "set_velocity": false,
+                        "identifier": "Ego Vehicle_3",
+                        "agent_type": 0
+                    },
+                    "Ego Vehicle_4":{
+                        "selected_spawnpoint": "Spawnpoint 8",
+                        "selected_input": "Keyboard_5",
+                        "selected_controller": "None",
+                        "selected_car": "audi.etron",
+                        "velocity": 14,
+                        "set_velocity": false,
+                        "identifier": "Ego Vehicle_4",
+                        "agent_type": 0
                     }
                 },
                 "current_scenario": "Trial 3"

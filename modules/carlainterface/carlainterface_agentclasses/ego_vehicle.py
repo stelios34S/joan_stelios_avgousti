@@ -174,7 +174,7 @@ class EgoVehicleProcess:
                 self.spawned_vehicle.apply_physics_control(physics)
 
     def do(self):
-        if self.settings.selected_input != 'None' and hasattr(self, 'spawned_vehicle'):
+        if self.settings.selected_input != 'None' and hasattr(self, 'spawned_vehicle') and self.spawned_vehicle is not None:
 
             self._control.steer = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].steering_angle / math.radians(450)
             self._control.reverse = self.carlainterface_mp.shared_variables_hardware.inputs[self.settings.selected_input].reverse
@@ -227,8 +227,9 @@ class EgoVehicleProcess:
             )
 
     def destroy(self):
-        if hasattr(self, 'spawned_vehicle'):
+        if hasattr(self, 'spawned_vehicle') and self.spawned_vehicle is not None:
             self.spawned_vehicle.destroy()
+            self.spawned_vehicle = None  # Mark the vehicle as destroyed
 
     def velocity_PD_controller(self, vel_error):
         _kp_vel = 50
@@ -314,7 +315,7 @@ class EgoVehicleProcess:
         return angle
 
     def set_shared_variables(self):
-        if hasattr(self, 'spawned_vehicle'):
+        if hasattr(self, 'spawned_vehicle') and self.spawned_vehicle is not None:
             rotation = self.spawned_vehicle.get_transform().rotation
             self.shared_variables.transform = [self.spawned_vehicle.get_transform().location.x,
                                                self.spawned_vehicle.get_transform().location.y,

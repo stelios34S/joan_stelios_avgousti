@@ -11,6 +11,7 @@ class ScenarioTrial3(Scenario):
         self.identifier = "trial_3"
         self.trajectory_path = "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory3.csv"  # Load predefined waypoints
         self.scenario_loaded = False
+        self.cruisecontrolflag = False
     @property
     def name(self):
         return "Trial 3"
@@ -36,3 +37,51 @@ class ScenarioTrial3(Scenario):
                 vehicle.destroy()
                 carla_interface_process.pipe_comm.send({"stop_all_modules": True})
 
+            if carla_interface_process.agent_objects['Ego Vehicle_1'].spawned_vehicle is not None:
+                bike = carla_interface_process.agent_objects['Ego Vehicle_1']
+                bikeloc = bike.spawned_vehicle.get_location()
+                checkloc = carla.Location(x=203.01726562, y=-180.54595703, z=1.05)
+                destroyloc = carla.Location(x=199.13095703, y=-157.41007812,z=1.05)
+                if vehicle_location.distance(checkloc) < 5 and not self.cruisecontrolflag:
+                    self.cruisecontrolflag = True
+                    bike.settings.set_velocity = True
+                    bike.settings.velocity = 25
+                if bikeloc.distance(destroyloc) < 4 :
+                    self.cruisecontrolflag = False
+                    bike.destroy()
+            if carla_interface_process.agent_objects['Ego Vehicle_2'].spawned_vehicle is not None:
+                bike = carla_interface_process.agent_objects['Ego Vehicle_2']
+                bikeloc = bike.spawned_vehicle.get_location()
+                checkloc = carla.Location(x=307.82703125, y=-123.98293945, z=1.05)
+                destroyloc = carla.Location(x=336.95628906, y=-117.52836914,z=1.05)
+                if vehicle_location.distance(checkloc) < 5 and not self.cruisecontrolflag:
+                    self.cruisecontrolflag = True
+                    bike.settings.set_velocity = True
+                    bike.settings.velocity = 14
+                if bikeloc.distance(destroyloc) < 4 :
+                    self.cruisecontrolflag = False
+                    bike.destroy()
+            if carla_interface_process.agent_objects['Ego Vehicle_3'].spawned_vehicle is not None:
+                bike = carla_interface_process.agent_objects['Ego Vehicle_3']
+                bikeloc = bike.spawned_vehicle.get_location()
+                checkloc = carla.Location(x=253.78289062, y=-304.5028125, z=1.05)
+                destroyloc = carla.Location(x=259.50169922, y=-307.10992188,z=1.05)
+                if vehicle_location.distance(checkloc) < 5 and not self.cruisecontrolflag:
+                    self.cruisecontrolflag = True
+                    bike.settings.set_velocity = True
+                    bike.settings.velocity = 14
+                if bikeloc.distance(destroyloc) < 4 :
+                    self.cruisecontrolflag = False
+                    bike.destroy()
+            if carla_interface_process.agent_objects['Ego Vehicle_4'].spawned_vehicle is not None:
+                bike = carla_interface_process.agent_objects['Ego Vehicle_4']
+                bikeloc = bike.spawned_vehicle.get_location()
+                checkloc = carla.Location(x=252.30695312, y=-174.53888672, z=1.05)
+                destroyloc = carla.Location(x=303.38798828, y=-168.13054688,z=1.05)
+                if vehicle_location.distance(checkloc) < 5 and not self.cruisecontrolflag:
+                    self.cruisecontrolflag = True
+                    bike.settings.set_velocity = True
+                    bike.settings.velocity = 30
+                if bikeloc.distance(destroyloc) < 4 :
+                    self.cruisecontrolflag = False
+                    bike.destroy()

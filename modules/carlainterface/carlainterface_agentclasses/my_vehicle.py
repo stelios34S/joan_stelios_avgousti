@@ -225,7 +225,7 @@ class MyVehicleProcess:
         if scenario_identifier == "trial_3":
             self.scenario_identifier = scenario_identifier
             return [
-                {'location': carla.Location(x=-45.48157715, y=372.21347656, z=1.05), 'behavior': 'continue'},
+                {'location': carla.Location(x=-51.78432617, y=-51.78432617, z=1.05), 'behavior': 'continue'},
                 {'location': carla.Location(x=310.480, y=-159.28362305, z=1.05), 'behavior': 'continue'},
                 {'location': carla.Location(x=255.07232422, y=-301.47052734, z=1.05), 'behavior': 'continue'},
                 {'location': carla.Location(x=114.86140625, y=-174.52228516, z=1.05), 'behavior': 'stop'},
@@ -457,7 +457,7 @@ class MyVehicleProcess:
 
             # Compute the steering angle error
             angle_diff = np.arctan2(np.cross(vehicle_vector, target_vector), np.dot(vehicle_vector, target_vector))
-            controller = PIDController(kp=0.2, ki=0.05, kd=0.8)
+            controller = PIDController(kp=0.2, ki=0.05, kd=0.8) # d is dumping , p is oing up to the point
             steering_correction = controller.compute(angle_diff)
             # Apply a scaling factor to avoid over-steering
 
