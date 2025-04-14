@@ -336,8 +336,6 @@ class MyVehicleProcess:
             ##################### INFORM BUTTON (I key)(TAP) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[
                 self.settings.selected_input].inform and self.scenario_identifier != "trial_1":
-                # print("KATI KATI")
-                print("inform")
                 self.is_in_override_mode = True
                 if self.trigger_active == "stop":  # If the box wants a stop, brake harder
                     self._control.brake = 1.0  # Max braking force
@@ -346,13 +344,12 @@ class MyVehicleProcess:
                 elif self.trigger_active == "continue":
                     self.user_override_speed = max(10, self.user_override_speed - 20)  # Temporary slowdown
                 else:
-                    self.user_override_speed = max(20, self.user_override_speed - 15)
+                    self.user_override_speed = max(15, self.user_override_speed - 15)
                 self.start_recovery_timer(7)
 
             ##################### INTERVENE BUTTON (J key) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[
                 self.settings.selected_input].intervene and self.scenario_identifier != "trial_1":
-                print("intervene")
                 self.is_in_override_mode = True
                 if self.trigger_active == "stop":
                     # Car originally planned to stop -> Override and keep moving
@@ -420,14 +417,14 @@ class MyVehicleProcess:
                     self._control.brake = 0.5  # medium braking force
                     self._control.throttle = 0
                     self.user_override_speed = 0
-                    self.start_recovery_timer(7)
+                    self.start_recovery_timer(8)
 
                 if box['behavior'] == "continue" and not self.trigger_has_fired:
                     self.trigger_has_fired = True
                     self.is_in_override_mode = True
                     self.user_override_speed = max(10,
                                                    self.user_override_speed - 15)  # Prevent zero speed in movement areas
-                    self.start_recovery_timer(5)
+                    self.start_recovery_timer(8)
                 break  # Exit loop once a trigger is found
         # Only reset trigger if the vehicle left the last trigger box
         if self.trigger_active and new_trigger is None:
@@ -457,14 +454,14 @@ class MyVehicleProcess:
                 [math.cos(math.radians(vehicle_rotation)), math.sin(math.radians(vehicle_rotation))])
 
             # Compute the steering angle error
-            angle_diff = np.arctan2(np.cross(vehicle_vector, target_vector), np.dot(vehicle_vector, target_vector))
-            controller = PIDController(kp=0.2, ki=0.05, kd=0.8) # d is dumping , p is oing up to the point
-            steering_correction = controller.compute(angle_diff)
-            # Apply a scaling factor to avoid over-steering
+            angle_diff_location = np.arctan2(np.cross(vehicle_vector, target_vector), np.dot(vehicle_vector, target_vector))
+            #anglediff_yaw = vehicle_rotation - next_wp['transform'].rotation.yaw
+            controller = PIDController(kp=0.2, ki=0.05, kd=0.7) # d is dumping , p is oing up to the point
+            steering_correction = controller.compute(angle_diff_location)
+            # Apply a scaling   factor to avoid over-steering
 
-            if abs(steering_correction) < 0.09:
-                steering_correction = 0
             self._control.steer = (0.9 * self._control.steer) + (0.1 * steering_correction)
+
             # If close enough, move to next waypoint
             speed = self.get_current_speed()
             if speed >= 80:

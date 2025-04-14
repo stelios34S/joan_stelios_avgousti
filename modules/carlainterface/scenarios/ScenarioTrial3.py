@@ -9,7 +9,7 @@ class ScenarioTrial3(Scenario):
         super().__init__()
         # Load waypoints and trigger boxes for this trial
         self.identifier = "trial_3"
-        self.trajectory_path = "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory3.csv"  # Load predefined waypoints
+        self.trajectory_path = "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory3new.csv"  # Load predefined waypoints
         self.scenario_loaded = False
         self.cruisecontrolflag = False
     @property
