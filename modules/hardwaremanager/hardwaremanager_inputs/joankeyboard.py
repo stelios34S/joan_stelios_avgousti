@@ -35,8 +35,8 @@ class JOANKeyboardProcess:
         :return:
         """
         boolean_key_press_value = key.event_type == keyboard.KEY_DOWN
+        print(key.name)
         int_key_identifier = QtGui.QKeySequence(key.name)[0]
-
         if int_key_identifier == self.settings.throttle_key:
             self._throttle = boolean_key_press_value
         elif int_key_identifier == self.settings.brake_key:
@@ -54,12 +54,15 @@ class JOANKeyboardProcess:
         elif int_key_identifier == self.settings.reverse_key and boolean_key_press_value:
             self._reverse = not self._reverse
         ###########################################################
-        elif int_key_identifier == self.settings.inform_key:
-            self.shared_variables.inform = boolean_key_press_value
-        elif int_key_identifier == self.settings.intervene_key:
-            self.shared_variables.intervene = boolean_key_press_value
+        # elif int_key_identifier == self.settings.inform_key:
+        #     self.shared_variables.inform = boolean_key_press_value
+        # elif int_key_identifier == self.settings.intervene_key:
+        #     self.shared_variables.intervene = boolean_key_press_value
         ############################################################
-
+        if key.name == 'right ctrl':
+            self.shared_variables.intervene = boolean_key_press_value
+        elif key.name == 'ctrl':
+            self.shared_variables.inform = boolean_key_press_value
     def do(self):
         """
         Processes all the inputs of the keyboard input and writes them to self._data which is then written to the news
@@ -136,8 +139,8 @@ class KeyBoardSettings:
         self.handbrake_key = QtGui.QKeySequence('space')[0]
         ##################################################
         ##TODO: ADD NEW BUTTONS FOR INTERVENE AND INFORM
-        self.inform_key=QtGui.QKeySequence('i')[0]
-        self.intervene_key = QtGui.QKeySequence("j")[0]
+        self.inform_key= QtCore.Qt.Key.Key_Control
+        self.intervene_key = QtCore.Qt.Key.Key_Control
         # self.inform_key = QtCore.Qt.Key.Key_0  # Numpad 0 / Insert
         # self.intervene_key = QtCore.Qt.Key.Key_Period  # Numpad . / Delete
         ##################################################

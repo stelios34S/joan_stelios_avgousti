@@ -194,7 +194,7 @@
             "NPC Controller Manager": {},
             "Data Recorder": {
             "path_to_save_file": "C:\\Users\\localadmin\\Documents\\GitHub\\joan_stelios_avgousti\\DataToAnalyze\\DataGroup2\\joan_dataTrial2.csv",
-                "variables_to_be_saved": [["Hardware Manager", "inputs", "Keyboard_1", "inform"], ["Hardware Manager", "inputs", "Keyboard_1", "intervene"], ["Carla Interface", "time"], ["Carla Interface", "agents", "My Vehicle_1", "transform"]],
+                "variables_to_be_saved": [],
                 "append_timestamp_to_filename": true,
             "path_to_trajectory_save_file": "",
             "should_record_trajectory": false

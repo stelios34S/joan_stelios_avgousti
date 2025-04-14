@@ -335,8 +335,9 @@ class MyVehicleProcess:
 
             ##################### INFORM BUTTON (I key)(TAP) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[
-                self.settings.selected_input].inform: #and self.scenario_identifier != "trial_1":
+                self.settings.selected_input].inform and self.scenario_identifier != "trial_1":
                 # print("KATI KATI")
+                print("inform")
                 self.is_in_override_mode = True
                 if self.trigger_active == "stop":  # If the box wants a stop, brake harder
                     self._control.brake = 1.0  # Max braking force
@@ -350,8 +351,8 @@ class MyVehicleProcess:
 
             ##################### INTERVENE BUTTON (J key) ############################
             if self.carlainterface_mp.shared_variables_hardware.inputs[
-                self.settings.selected_input].intervene: #and self.scenario_identifier != "trial_1":
-
+                self.settings.selected_input].intervene and self.scenario_identifier != "trial_1":
+                print("intervene")
                 self.is_in_override_mode = True
                 if self.trigger_active == "stop":
                     # Car originally planned to stop -> Override and keep moving
