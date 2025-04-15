@@ -348,7 +348,7 @@ class MyVehicleProcess:
                     self._control.throttle = 0
                     self.user_override_speed = 0
                 elif self.trigger_active == "continue":
-                    self.user_override_speed = max(10, self.user_override_speed - 20)  # Temporary slowdown
+                    self.user_override_speed = max(8, self.user_override_speed - 20)  # Temporary slowdown
                 else:
                     self.user_override_speed = max(15, self.user_override_speed - 15)
                 self.start_recovery_timer(7)
