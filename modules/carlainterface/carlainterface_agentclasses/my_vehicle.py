@@ -219,7 +219,7 @@ class MyVehicleProcess:
             self.scenario_identifier = scenario_identifier
             triggerlist = [
                 {'location': carla.Location(x=200.37308594, y=-300.37574219, z=1.05), 'behavior': 'continue'},
-                {'location': carla.Location(x=211.56837891, y=-245.08835938, z=1.05), 'behavior': 'stop'},
+                {'location': carla.Location(x=214.87703125, y=-245.78582031, z=1.05), 'behavior': 'stop'},
                 {'location': carla.Location(x=329.82621094, y=-182.390625, z=1.05), 'behavior': 'final'}]
             return triggerlist
         if scenario_identifier == "trial_3":
@@ -229,6 +229,12 @@ class MyVehicleProcess:
                 {'location': carla.Location(x=310.480, y=-159.28362305, z=1.05), 'behavior': 'continue'},
                 {'location': carla.Location(x=255.07232422, y=-301.47052734, z=1.05), 'behavior': 'continue'},
                 {'location': carla.Location(x=114.86140625, y=-174.52228516, z=1.05), 'behavior': 'stop'},
+                {'location': carla.Location(x=203.16382812, y=-195.25564453, z=1.05), 'behavior': 'stop'},
+                {'location': carla.Location(x=131.10570312, y=-217.95554688, z=1.05), 'behavior': 'final'}]
+        if scenario_identifier == "trial_4":
+            self.scenario_identifier = scenario_identifier
+            return [
+                {'location': carla.Location(x=255.07232422, y=-301.47052734, z=1.05), 'behavior': 'continue'},
                 {'location': carla.Location(x=203.16382812, y=-195.25564453, z=1.05), 'behavior': 'stop'},
                 {'location': carla.Location(x=131.10570312, y=-217.95554688, z=1.05), 'behavior': 'final'}]
 
