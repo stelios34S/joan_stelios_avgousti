@@ -8,7 +8,7 @@ class ScenarioTrial1(Scenario):
     def __init__(self):
         super().__init__()
         # Load waypoints and trigger boxes for this trial
-
+        ###int((time_now - datetime(1970, 1, 1)).total_seconds()*1000000000) for calculating the time
         ####MAYBE SEND THIS THROUGH TO THE FUNCTION OF THE VEHICLE
         self.identifier = "trial_1"
         self.trajectory_path = "modules/carlainterface/carlainterface_agentclasses/trajectories/trajectory1.csv"  # Load predefined waypoints

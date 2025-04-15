@@ -232,7 +232,7 @@
             "Data Recorder": {
             "path_to_save_file": "C:\\Users\\localadmin\\Documents\\GitHub\\joan_stelios_avgousti\\DataToAnalyze\\DataGroup1\\joan_dataTrial3.csv",
             "append_timestamp_to_filename": true,
-                "variables_to_be_saved": [["Hardware Manager", "inputs", "Keyboard_1", "inform"], ["Hardware Manager", "inputs", "Keyboard_1", "intervene"], ["Carla Interface", "time"], ["Carla Interface", "agents", "My Vehicle_1", "transform"]],
+                "variables_to_be_saved": [["Hardware Manager", "inputs", "Keyboard_1", "inform"], ["Hardware Manager", "inputs", "Keyboard_1", "intervene"], ["Carla Interface", "time"], ["Carla Interface", "agents", "My Vehicle_1", "transform"], ["Carla Interface", "agents", "Ego Vehicle_1", "transform"]],
                 "path_to_trajectory_save_file": "",
             "should_record_trajectory": false
         }
@@ -288,7 +288,9 @@
             "Data Recorder": {
             "path_to_save_file": "C:\\Users\\localadmin\\Documents\\GitHub\\joan_stelios_avgousti\\DataToAnalyze\\DataGroup1\\joan_dataTrial4.csv",
             "append_timestamp_to_filename": true,
-                "variables_to_be_saved": [["Hardware Manager", "inputs", "Keyboard_1", "inform"], ["Hardware Manager", "inputs", "Keyboard_1", "intervene"], ["Carla Interface", "time"], ["Carla Interface", "agents", "My Vehicle_1", "transform"]],
+                "variables_to_be_saved": [["Hardware Manager", "inputs", "Keyboard_1", "inform"], ["Hardware Manager", "inputs", "Keyboard_1", "intervene"], ["Carla Interface", "time"], ["Carla Interface", "agents", "My Vehicle_1", "transform"],
+                ["Carla Interface", "agents", "Ego Vehicle_1", "transform"],["Carla Interface", "agents", "Ego Vehicle_2", "transform"],["Carla Interface", "agents", "Ego Vehicle_3", "transform"]],
+
                 "path_to_trajectory_save_file": "",
             "should_record_trajectory": false
         }
