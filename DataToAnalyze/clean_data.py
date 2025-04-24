@@ -19,6 +19,10 @@ def clean_and_merge_trials(base_dirs, output_dir, debounce_threshold=1.0):
     saved_files = []
 
     for base_dir in base_dirs:
+        group_label = os.path.basename(base_dir.rstrip("/\\"))
+        group_output_dir = os.path.join(output_dir, group_label)
+        Path(group_output_dir).mkdir(parents=True, exist_ok=True)
+
         for participant_folder in os.listdir(base_dir):
             participant_path = os.path.join(base_dir, participant_folder)
             if not os.path.isdir(participant_path):
@@ -63,7 +67,7 @@ def clean_and_merge_trials(base_dirs, output_dir, debounce_threshold=1.0):
             print(f"Intervene presses kept: {df['intervene_clean'].sum()}")
             # Save cleaned version
             participant_id = participant_folder.split('-')[0].strip()
-            save_path = os.path.join(output_dir, f"{participant_id}.csv")
+            save_path = os.path.join(group_output_dir, f"{participant_id}.csv")
             df.to_csv(save_path, index=False)
             saved_files.append(save_path)
 
