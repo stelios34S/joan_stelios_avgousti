@@ -44,7 +44,27 @@ def process_survey_data(survey_csv_path):
 
     # Step 6: Compute trust score (mean of q6–q17)
     df['trust_score'] = df[trust_items].astype(float).mean(axis=1)
+    # Step 7: Encode other relevant fields
+    df['gender'] = df['gender'].str.strip().str.lower().map({
+        'male': 0,
+        'female': 1,
+        'other': 2
+    })
 
+    df['driving_experience'] = df['driving_experience'].str.strip().map({
+        'Not experienced': 1,
+        'Slightly Experienced': 2,
+        'Experienced': 3,
+        'Moderately Experienced': 4,
+        'Very Experienced': 5
+    })
+
+    df['av_experience'] = df['av_experience'].str.strip().str.lower().map({
+        'yes': 1,
+        'no': 0
+    })
+
+    df['comfort_with_automation'] = df['comfort_with_automation'].replace(likert_map)
     # Step 7: Keep relevant columns
     keep_cols = ['ResponseId', 'age', 'gender', 'driving_experience',
                  'av_experience', 'comfort_with_automation',
