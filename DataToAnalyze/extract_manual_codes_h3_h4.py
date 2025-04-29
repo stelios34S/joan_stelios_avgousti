@@ -109,117 +109,43 @@ df[['ResponseId','btn_theme','expl_theme']+OUTCOMES]\
   .to_csv("themes_with_outcomes.csv", index=False)
 print("\n✔️ Saved themes_with_outcomes.csv – ready for plots or further stats")
 
-# ------------------------------------------------------------
-# 5. TRIANGULATION – do the three signals agree?
-#    *   SELF-REPORT  →  btn_theme / expl_theme
-#    *   STATED CHOICE → “most_comfortable” derived from ranks
-#    *   BEHAVIOUR     → total_presses
-# ------------------------------------------------------------
+############################################################
+#  TRIANGULATION  –  revised
+############################################################
 
-# def triangulate(df):
-#     """
-#     Creates simple crosstabs + correlations that show how well the
-#     three sources of evidence line up for Buttons (H-3) and
-#     Explanations (H-4).
-#
-#     • Self-report:      btn_theme / expl_theme  (coded by you)
-#     • Stated preference: prefers_buttons / prefers_explanations_and_buttons
-#     • Behaviour:        total_presses
-#     """
-#     # -------- H-3 : buttons ---------------------------------
-#     print("\n=========== TRIANGULATION  –  H-3 (Buttons) ===========")
-#
-#     # (A)  Self-report  ×  Ranking
-#     tab_btn = pd.crosstab(df['btn_theme'],
-#                           df['prefers_buttons'],
-#                           dropna=False)
-#     print("\nSelf-report theme  ×  Ranked-buttons-best")
-#     print(tab_btn)
-#
-#     # (B)  Self-report  ×  Behaviour
-#     print("\nButton theme  →  mean press count")
-#     print(df.groupby('btn_theme')['total_presses'].agg(['count','mean','std']))
-#
-#     # -------- H-4 : explanations ----------------------------
-#     print("\n=========== TRIANGULATION  –  H-4 (Explanations) ======")
-#
-#     tab_expl = pd.crosstab(df['expl_theme'],
-#                            df['prefers_explanations_and_buttons'],
-#                            dropna=False)
-#     print("\nSelf-report theme  ×  Ranked-explanations-best")
-#     print(tab_expl)
-#
-#     print("\nExplanation theme  →  mean trust score")
-#     print(df.groupby('expl_theme')['trust_score'].agg(['count','mean','std']))
-#
-#     # -------- Optional flags for quick inspection -----------
-#     mismatch_btn = df[(df['btn_theme']=='positive') &
-#                       (df['prefers_buttons']==0)]
-#     if not mismatch_btn.empty:
-#         print(f"\n⚠️  {len(mismatch_btn)} people PRAISED buttons but did NOT rank a "
-#               "button version highest:")
-#         print(mismatch_btn['ResponseId'].tolist())
-#
-#     mismatch_expl = df[(df['expl_theme']=='positive') &
-#                        (df['prefers_explanations_and_buttons']==0)]
-#     if not mismatch_expl.empty:
-#         print(f"\n⚠️  {len(mismatch_expl)} people PRAISED explanations but did NOT rank "
-#               "Version-3 highest:")
-#         print(mismatch_expl['ResponseId'].tolist())
+def triangulate_h3(df):
+    """H-3  Buttons → Trust  (self-report vs behaviour/attitude)"""
+    print("\n=========== H-3  (Buttons) ===========")
 
+    # (A)  Trust by button-theme
+    print("\nTrust-score by btn_theme")
+    print(df.groupby('btn_theme')['trust_score']
+            .agg(['count','mean','std']))
 
-def triangulate(df):
-    """
-    Show how SELF-REPORT themes, STATED preference (ranking)
-    and BEHAVIOUR (presses) line-up.
+    # (B)  Press count by button-theme
+    print("\nPress-count by btn_theme")
+    print(df.groupby('btn_theme')['total_presses']
+            .agg(['count','mean','std']))
 
-    • Buttons (H-3)   →  btn_theme   vs  prefers_buttons
-    • Explan. (H-4)   →  expl_theme  vs  prefers_expl&btn
-    """
+def triangulate_h4(df):
+    """H-4  Explanations → Trust  (self-report × ranking × outcomes)"""
+    print("\n=========== H-4  (Explanations) ==========")
 
-    ##################################################################
-    # Helper that prints a 2×2 grid with behaviour stats in each cell
-    ##################################################################
-    def grid(theme_col, pref_flag, behaviour, metric_name):
+    # 1.  Self-report theme  ×  ranking flag
+    tab = pd.crosstab(df['expl_theme'],
+                      df['prefers_explanations_and_buttons'],
+                      dropna=False)
+    print("\nSelf-report theme  ×  Ranked Version-3 highest")
+    print(tab)
 
-        print(f"\n=========== {metric_name.upper()}  ×  SELF vs RANK  –  {theme_col} ==========")
+    # 2.  Outcomes split by expl_theme
+    for outcome in ['trust_score', 'total_presses']:
+        print(f"\n{outcome} by expl_theme")
+        print(df.groupby('expl_theme')[outcome]
+                .agg(['count','mean','std']))
 
-        # build 2×2 frame
-        grid_df = (
-            df
-            .groupby([theme_col, pref_flag])[behaviour]
-            .agg(['count', 'mean', 'std'])       # behaviour descriptives
-            .reset_index()
-            .pivot(index=theme_col, columns=pref_flag)
-            .reindex(index=['positive','negative','neutral','mixed'])      # nice row order
-        )
-
-        # nicer column headers    e.g.   (count,0) → “count|NoPref”
-        grid_df.columns = [f"{stat}|{'Pref' if pref else 'NoPref'}"
-                           for stat, pref in grid_df.columns]
-
-        print(grid_df.fillna('-'))
-
-        # -------- Flag mismatches more clearly -----------------------
-        mismatch = df[(df[theme_col]=='positive') & (df[pref_flag]==0)]
-        if not mismatch.empty:
-            print(f"\n⚠  {len(mismatch)} participants called it *positive* "
-                  f"but did NOT rank that version highest:")
-            print("   " + ", ".join(mismatch['ResponseId']))
-
-    # ---------- H-3 : BUTTONS ---------------------------------------
-    grid('btn_theme',  'prefers_explanations_and_buttons',                # self vs stated
-         'total_presses', 'Press-count')
-    grid('btn_theme',  'prefers_explanations_and_buttons',                # self vs stated
-         'trust_score', 'Trust-Score')
-
-    # ---------- H-4 : EXPLANATIONS ----------------------------------
-    grid('expl_theme', 'prefers_explanations_and_buttons',
-         'total_presses',  'Press-count')
-    grid('expl_theme', 'prefers_explanations_and_buttons',
-         'trust_score',  'Trust-score')
-
-# ------------------------------------------------------------
-# 6.  Run triangulation and finish
-# ------------------------------------------------------------
-triangulate(df)
+############################################################
+#  run
+############################################################
+triangulate_h3(df)
+triangulate_h4(df)
