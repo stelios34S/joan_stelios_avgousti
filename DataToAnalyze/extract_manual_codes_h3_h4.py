@@ -5,7 +5,7 @@ from scipy.stats import ttest_ind
 
 #POSITIVE, NEGATIVE, MIX, NEUTRAL
 MERGED   = Path("MergedData.csv")          # numeric stuff
-CODED_XL = Path("open_ended_coded.xlsx")   # you added btn_theme / expl_theme
+CODED_XL = Path("open_ended_encoded.xlsx")   # you added btn_theme / expl_theme
 
 ##############################################################################
 # ---------- EXTRA:  Pair-wise rank preferences -----------------------------

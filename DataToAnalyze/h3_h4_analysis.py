@@ -66,7 +66,7 @@ export_cols = ['ResponseId',
                 ('expl_up', 'expl_down', 'btn_up',
                  'btn_down'))]
 
-df[export_cols].to_excel("open_ended_for_manual_coding.xlsx", index=False)
-print("\n✔️  Saved open_ended_for_manual_coding.xlsx")
+df[export_cols].to_excel("open_ended_encoded.xlsx", index=False)
+print("\n✔️  Saved open_ended_encoded.xlsx")
 
 
