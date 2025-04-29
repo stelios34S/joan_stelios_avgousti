@@ -16,3 +16,4 @@ wres~=1.0.3
 pathlib~=1.0.1
 scipy
 matplotlib
+openpyxl
