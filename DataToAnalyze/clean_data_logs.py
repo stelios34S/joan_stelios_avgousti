@@ -89,7 +89,7 @@ def collapse_consecutive_true(series):
                 prev = False
     return cleaned
 
-def summarize_cleaned_data(cleaned_dir, group_label):
+def summarize_cleaned_data(cleaned_dir, group_label,secs_per_unit=60):
     """
     Summarizes inform/intervene counts per participant.
 
@@ -112,12 +112,23 @@ def summarize_cleaned_data(cleaned_dir, group_label):
         n_intervene = df['intervene_clean'].sum()
         total = n_inform + n_intervene
 
+        # ------------------------------------------------------------------
+        # trip duration  – difference between first and last *logged* second
+        # ------------------------------------------------------------------
+        trip_secs = df["rel_time"].iat[-1]  # already in seconds
+        if trip_secs == 0:  # (defensive)
+            continue
+
+        press_rate = total / (trip_secs / secs_per_unit)
+
         summary_rows.append({
             'participant_id': participant_id,
             'group': group_label,
             'n_inform': int(n_inform),
             'n_intervene': int(n_intervene),
-            'total_presses': int(total)
+            'total_presses': int(total),
+            "trip_secs": trip_secs,
+            "press_rate": press_rate
         })
 
     return pd.DataFrame(summary_rows)

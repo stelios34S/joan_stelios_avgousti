@@ -1,0 +1,11 @@
+outcome,predictor,method,correlation,p_value
+trust_score,age,Spearman,-0.009827887304231519,0.9546347690348826
+trust_score,gender,Spearman,0.11928737810479428,0.48834370961736584
+trust_score,driving_experience,Spearman,0.1512981464254124,0.3784057264324254
+trust_score,av_experience,Spearman,0.07847636234644195,0.6491498712286634
+trust_score,comfort_with_automation,Pearson,0.4868233007691412,0.002604665052267143
+total_presses,age,Spearman,-0.07613366026060282,0.658979804125303
+total_presses,gender,Spearman,0.06564679798364681,0.7036553259127865
+total_presses,driving_experience,Spearman,-0.10924914226571218,0.5259084038801682
+total_presses,av_experience,Spearman,0.0671805329115146,0.6970557084453017
+total_presses,comfort_with_automation,Spearman,-0.33849267586381715,0.04345304756796139
