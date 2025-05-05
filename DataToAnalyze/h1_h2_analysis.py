@@ -47,18 +47,6 @@ def run_hypothesis_tests(df):
     print("T-test (Interventions):", ttest_result)
     print("Cohen’s d (Interventions):", cohens_d(presses_voice, presses_text))
 
-    # ------------- H2b  presses PER MINUTE  (new) -------------------
-    rate_voice = voice["press_rate"].dropna()
-    rate_text = text["press_rate"].dropna()
-
-    print("\n=== H2-alt: Modality → Press-RATE (per minute) ===")
-    print("Shapiro voice / text:", stats.shapiro(rate_voice), stats.shapiro(rate_text))
-    print("Levene:", stats.levene(rate_voice, rate_text))
-
-    rate_t = stats.ttest_ind(rate_voice, rate_text, equal_var=False)
-    print("T-test:", rate_t)
-    print("Cohen d:", cohens_d(rate_voice, rate_text))
-
 
     # Optional plots
     plt.boxplot([trust_text, trust_voice], labels=['Text', 'Voice'])
@@ -71,12 +59,15 @@ def run_hypothesis_tests(df):
     plt.ylabel('Button Presses')
     plt.show()
 
+    # H1: voice > text  (trust)
+    t1 = stats.ttest_ind(trust_voice, trust_text,
+                         equal_var=False, alternative="greater")
+    print(f"H1 one-tailed Welch t : t={t1.statistic:.2f}, p={t1.pvalue:.3f}")
 
-
-    plt.boxplot([rate_text, rate_voice], labels=["Text", "Voice"])
-    plt.title("Interventions per minute by group")
-    plt.ylabel("Presses / min")
-    plt.show()
+    # H2: voice < text  (button presses)
+    t2 = stats.ttest_ind(presses_voice, presses_text,
+                         equal_var=False, alternative="less")
+    print(f"H2 one-tailed Welch t : t={t2.statistic:.2f}, p={t2.pvalue:.3f}")
 
 # --- Entry Point ---
 if __name__ == "__main__":

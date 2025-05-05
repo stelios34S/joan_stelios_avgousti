@@ -105,8 +105,11 @@ print("\n################  H-4  (Explanations)  #############")
 theme_descriptives(df, 'expl_theme', OUTCOMES)
 
 # 4. Export tidy sheet for plots --------------------------------------------
-df[['ResponseId','btn_theme','expl_theme']+OUTCOMES]\
-  .to_csv("themes_with_outcomes.csv", index=False)
+export_cols = ['ResponseId',
+               'btn_theme','expl_theme',
+               'prefers_explanations_and_buttons',      # ▶ add this
+               'trust_score','total_presses']
+df[export_cols].to_csv("themes_with_outcomes.csv", index=False)
 print("\n✔️ Saved themes_with_outcomes.csv – ready for plots or further stats")
 
 ############################################################
